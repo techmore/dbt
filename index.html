@@ -463,16 +463,16 @@
 
         calendarGrid.innerHTML = cells.join("");
 
+        const orderedDates = Object.keys(state.days)
+          .filter((day) => state.days[day])
+          .sort();
         let currentStreak = 0;
-        const cursor = new Date();
-        cursor.setHours(0, 0, 0, 0);
-        while (state.days[isoDate(cursor)]) {
-          currentStreak += 1;
-          cursor.setDate(cursor.getDate() - 1);
-        }
-
-        if (!state.days[today]) {
-          currentStreak = 0;
+        if (state.days[today]) {
+          const cursor = new Date(today);
+          while (state.days[isoDate(cursor)]) {
+            currentStreak += 1;
+            cursor.setDate(cursor.getDate() - 1);
+          }
         }
 
         streakCount.textContent = String(currentStreak);
@@ -480,7 +480,14 @@
         goalState.textContent = weekDone >= 5 ? "Met" : "Not met";
         progressNote.textContent = weekDone >= 5
           ? "This week meets the goal. Keep the same structure next week."
-          : "Goal is 5 days. One missed day does not break the system, but it does reset the streak.";
+          : "Goal is 5 days. A missed day resets the streak to zero, but the week still counts for review.";
+
+        if (orderedDates.length > 0) {
+          const lastDate = orderedDates[orderedDates.length - 1];
+          if (lastDate !== today && !state.days[today]) {
+            progressNote.textContent = "No mark saved for today yet, so the current streak is 0 until today is checked.";
+          }
+        }
 
         calendarGrid.querySelectorAll("[data-date]").forEach((button) => {
           button.addEventListener("click", () => toggleDay(button.dataset.date));
@@ -513,15 +520,13 @@
         }
 
         let currentStreak = 0;
-        const cursor = new Date();
-        cursor.setHours(0, 0, 0, 0);
-        while (state.days[isoDate(cursor)]) {
-          currentStreak += 1;
-          cursor.setDate(cursor.getDate() - 1);
-        }
-
-        if (!state.days[isoDate(new Date())]) {
-          currentStreak = 0;
+        const todayDate = isoDate(new Date());
+        if (state.days[todayDate]) {
+          const cursor = new Date(todayDate);
+          while (state.days[isoDate(cursor)]) {
+            currentStreak += 1;
+            cursor.setDate(cursor.getDate() - 1);
+          }
         }
 
         state.currentStreak = currentStreak;
@@ -533,6 +538,9 @@
         const weekDone = currentWeekDays.filter((day) => state.days[day]).length;
         if (weekDone < 5 && !checked) {
           progressNote.textContent = "Daily mark saved. Keep aiming for 5/7 this week.";
+        }
+        if (checked) {
+          progressNote.textContent = "Day removed. The current streak is now recalculated from today.";
         }
         renderCalendar();
       }
