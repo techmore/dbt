@@ -226,6 +226,7 @@
         <h2>If emotion labeling is hard, use this starter sheet</h2>
         <p class="muted">
           Pick one option from each menu. You can always change an entry later. This is a simple DBT emotion-regulation starter, not a test.
+          If more than one response happened, pick the main one and note the others in the space below.
         </p>
         <form id="chain-form" class="language-grid">
           <label>
@@ -239,6 +240,9 @@
               <option>Empty / Numb</option>
               <option>Frustrated</option>
               <option>Confused</option>
+              <option>Stressed</option>
+              <option>Panicked</option>
+              <option>Frozen</option>
               <option>Safe</option>
             </select>
           </label>
@@ -249,8 +253,11 @@
               <option>Not enough sleep</option>
               <option>Skipped a meal</option>
               <option>Too much pressure + no break</option>
+              <option>Too many things at once</option>
               <option>Argument or avoidant conflict</option>
               <option>Unexpected schedule shift</option>
+              <option>Two obligations collided</option>
+              <option>I felt like I had to be on immediately</option>
               <option>Hard to identify right now</option>
             </select>
           </label>
@@ -261,10 +268,17 @@
               <option>Pressed send without thinking</option>
               <option>Raised my voice</option>
               <option>Used a DBT skill (breath, cold, pause)</option>
+              <option>Used box breathing</option>
+              <option>Used self-talk / reality check</option>
               <option>Did one calming action (water, walk, music)</option>
+              <option>Paused and took a break</option>
               <option>Told someone I needed a break</option>
               <option>Did nothing / froze</option>
             </select>
+          </label>
+          <label>
+            Notes
+            <input id="chain-notes" type="text" placeholder="Add a short detail if needed" />
           </label>
         </form>
         <button id="chain-save" class="btn" type="button">Save today's entry</button>
@@ -475,6 +489,7 @@
       const chainForm = document.getElementById("chain-form");
       const chainResult = document.getElementById("chain-result");
       const chainSave = document.getElementById("chain-save");
+      const chainNotes = document.getElementById("chain-notes");
 
       const key = "dbt-tracker-state-v1";
       const chainKey = "dbt-chain-state-v1";
@@ -665,11 +680,12 @@
       if (chainSaved && chainResult) {
         try {
           const savedChain = JSON.parse(chainSaved);
-          chainResult.textContent = `Last entry (${savedChain.date}): ${savedChain.emotion} → ${savedChain.trigger} → ${savedChain.response}`;
+          chainResult.textContent = `Last entry (${savedChain.date}): ${savedChain.emotion} → ${savedChain.trigger} → ${savedChain.response}${savedChain.notes ? ` | ${savedChain.notes}` : ""}`;
           if (chainForm) {
             chainForm.querySelector("#emotion").value = savedChain.emotion;
             chainForm.querySelector("#trigger").value = savedChain.trigger;
             chainForm.querySelector("#response").value = savedChain.response;
+            chainForm.querySelector("#chain-notes").value = savedChain.notes || "";
           }
         } catch {
           // Ignore malformed data.
@@ -682,9 +698,10 @@
           emotion: document.getElementById("emotion").value,
           trigger: document.getElementById("trigger").value,
           response: document.getElementById("response").value,
+          notes: document.getElementById("chain-notes").value.trim(),
         };
         localStorage.setItem(chainKey, JSON.stringify(payload));
-        chainResult.textContent = `Saved for ${payload.date}: ${payload.emotion} → ${payload.trigger} → ${payload.response}`;
+        chainResult.textContent = `Saved for ${payload.date}: ${payload.emotion} → ${payload.trigger} → ${payload.response}${payload.notes ? ` | ${payload.notes}` : ""}`;
       });
 
       updateTracker();
