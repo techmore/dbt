@@ -43,6 +43,7 @@
         <a href="#start">Start here</a>
         <a href="#progression">Progression</a>
         <a href="#daily">Daily timetable</a>
+        <a href="#language-map">Language map</a>
         <a href="#resources">Deep resources</a>
       </div>
 
@@ -81,9 +82,12 @@
             <h3>Day 1–2: Stabilize</h3>
             <p>Only two habits:</p>
             <ol>
-              <li>30-second body scan once every 3 hours</li>
-              <li>60-second end-of-day log: one feeling, one trigger, one response</li>
+              <li>2-minute body-check once every 3 hours: jaw, shoulders, breathing, hands, stomach, feet</li>
+              <li>Use the 3-step evening log template below (emotion, trigger, response)</li>
             </ol>
+            <p class="muted" style="margin-top: 0.45rem">
+              Body-check means: “Where in my body do I feel tension right now?”
+            </p>
           </article>
           <article class="timeline-item">
             <h3>Day 3–5: Build observation</h3>
@@ -118,7 +122,7 @@
           <article class="timeline-item">
             <h3>Morning (7–12 min)</h3>
             <ul>
-              <li>5-minute body-first check-in</li>
+              <li>2-minute body-first check-in (jaw, breathing, shoulders, hands)</li>
               <li>3 minutes of paced breathing (4-6 count cycle)</li>
               <li>10-second values statement: “Today I will prioritize …”</li>
             </ul>
@@ -142,8 +146,60 @@
         </div>
       </section>
 
+      <section id="language-map" class="panel">
+        <h2>If emotion labeling is hard, use this starter sheet</h2>
+        <p class="muted">
+          Pick one option from each menu. You can always change an entry later.
+        </p>
+        <form id="chain-form" class="language-grid">
+          <label>
+            Emotion I notice
+            <select id="emotion">
+              <option>Overwhelmed</option>
+              <option>Angry</option>
+              <option>Sad</option>
+              <option>Anxious</option>
+              <option>Shamed</option>
+              <option>Empty / Numb</option>
+              <option>Frustrated</option>
+              <option>Confused</option>
+              <option>Safe</option>
+            </select>
+          </label>
+          <label>
+            Trigger (what happened just before)
+            <select id="trigger">
+              <option>Someone said something sharp</option>
+              <option>Not enough sleep</option>
+              <option>Skipped a meal</option>
+              <option>Too much pressure + no break</option>
+              <option>Argument or avoidant conflict</option>
+              <option>Unexpected schedule shift</option>
+              <option>Hard to identify right now</option>
+            </select>
+          </label>
+          <label>
+            Response (what I did next)
+            <select id="response">
+              <option>Shut down or withdrew</option>
+              <option>Pressed send without thinking</option>
+              <option>Raised my voice</option>
+              <option>Used a DBT skill (breath, cold, pause)</option>
+              <option>Did one calming action (water, walk, music)</option>
+              <option>Told someone I needed a break</option>
+              <option>Did nothing / froze</option>
+            </select>
+          </label>
+        </form>
+        <button id="chain-save" class="btn" type="button">Save today's entry</button>
+        <p id="chain-result" class="muted" aria-live="polite"></p>
+      </section>
+
       <section id="tools" class="panel">
-        <h2>DBT Tool Set</h2>
+        <h2>DBT Skill Set</h2>
+        <p class="muted">
+          This is the full set for beginner practice, structured by the four core modules. I removed the “3-item” shorthand.
+        </p>
         <div class="grid three-col">
           <article>
             <h3>Mindfulness</h3>
@@ -170,6 +226,24 @@
               <li>TIPP protocol at first wave of overwhelm</li>
               <li>Self-soothing by senses: cold, texture, scent</li>
               <li>Disaster survival plan for impulsive moments</li>
+            </ul>
+          </article>
+          <article>
+            <h3>Interpersonal Effectiveness</h3>
+            <p>Core goal: keep your values and boundaries in conversation.</p>
+            <ul>
+              <li>DEAR: Describe, Express, Assert, Reinforce</li>
+              <li>One objective, one sentence, one request</li>
+              <li>Short scripts prevent escalation under stress</li>
+            </ul>
+          </article>
+          <article>
+            <h3>Chain Analysis</h3>
+            <p>Core goal: understand sequence and build alternatives.</p>
+            <ul>
+              <li>Prompt → vulnerability → interpretation → emotion → urge → action → consequence</li>
+              <li>Keep it to 1 chain per difficult moment</li>
+              <li>Use your starter sheet as the “first draft”</li>
             </ul>
           </article>
         </div>
@@ -283,8 +357,12 @@
     <script>
       const tracker = document.getElementById("tracker-form");
       const result = document.getElementById("tracker-result");
+      const chainForm = document.getElementById("chain-form");
+      const chainResult = document.getElementById("chain-result");
+      const chainSave = document.getElementById("chain-save");
 
       const key = "dbt-tracker-state-v1";
+      const chainKey = "dbt-chain-state-v1";
 
       function updateTracker() {
         const checked = [...tracker.querySelectorAll("input[type=checkbox]")].filter((cb) => cb.checked).length;
@@ -311,6 +389,32 @@
         });
         localStorage.setItem(key, JSON.stringify(state));
         updateTracker();
+      });
+
+      const chainSaved = localStorage.getItem(chainKey);
+      if (chainSaved && chainResult) {
+        try {
+          const savedChain = JSON.parse(chainSaved);
+          chainResult.textContent = `Last entry (${savedChain.date}): ${savedChain.emotion} → ${savedChain.trigger} → ${savedChain.response}`;
+          if (chainForm) {
+            chainForm.querySelector("#emotion").value = savedChain.emotion;
+            chainForm.querySelector("#trigger").value = savedChain.trigger;
+            chainForm.querySelector("#response").value = savedChain.response;
+          }
+        } catch {
+          // Ignore malformed data.
+        }
+      }
+
+      chainSave?.addEventListener("click", () => {
+        const payload = {
+          date: new Date().toISOString().slice(0, 10),
+          emotion: document.getElementById("emotion").value,
+          trigger: document.getElementById("trigger").value,
+          response: document.getElementById("response").value,
+        };
+        localStorage.setItem(chainKey, JSON.stringify(payload));
+        chainResult.textContent = `Saved for ${payload.date}: ${payload.emotion} → ${payload.trigger} → ${payload.response}`;
       });
 
       updateTracker();

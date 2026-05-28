@@ -177,6 +177,32 @@ main.page {
   gap: 0.75rem;
 }
 
+.language-grid {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.language-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.language-grid select {
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 0.45rem;
+  font: inherit;
+}
+
 .tracker-grid {
   display: grid;
   gap: 0.75rem;
