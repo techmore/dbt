@@ -1,95 +1,149 @@
-:root {
-  --bg: #f6f7fb;
-  --surface: #ffffff;
-  --surface-soft: #f1f4fb;
-  --text: #111827;
-  --muted: #5b6472;
-  --accent: #2563eb;
-  --accent-2: #0891b2;
-  --line: #dbe1ee;
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-* {
-  box-sizing: border-box;
+:root {
+  --olive-50:  #f7f8f4;
+  --olive-100: #eef0e6;
+  --olive-200: #dde1d0;
+  --olive-300: #c4c9b0;
+  --olive-400: #a7ae8b;
+  --olive-500: #8a9269;
+  --olive-600: #6e754b;
+  --olive-700: #575d3d;
+  --olive-800: #464a34;
+  --olive-900: #3b3e2d;
+  --olive-950: #1f2117;
+
+  --stone-50:  #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+
+  --bg:         var(--olive-300);
+  --surface:    var(--olive-200);
+  --surface2:   var(--olive-300);
+  --border:     var(--olive-400);
+  --text:       var(--stone-800);
+  --text-light: var(--stone-500);
+  --accent:     var(--olive-700);
+  --accent-fg:  var(--olive-50);
+  --green:      #5a8a5e;
+  --red:        #c0392b;
+  --amber:      #b07d2a;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: linear-gradient(180deg, #eff2f9, var(--bg));
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Instrument Serif', serif;
+  line-height: 1.2;
+}
+
+::selection {
+  background-color: var(--olive-200);
+  color: var(--olive-800);
+}
+
+:focus-visible {
+  outline: 2px solid var(--olive-500);
+  outline-offset: 2px;
 }
 
 .container {
-  width: min(1080px, 92vw);
+  max-width: 72rem;
+  width: min(72rem, 92vw);
   margin: 0 auto;
 }
 
 .hero {
-  padding: 4.75rem 0 3.2rem;
-  border-bottom: 1px solid var(--line);
-  background:
-    radial-gradient(circle at 20% 20%, #dbeafe 0%, transparent 45%),
-    radial-gradient(circle at 85% 0%, #cffafe 0%, transparent 35%),
-    var(--surface);
+  background: rgba(247, 248, 244, 0.92);
+  border-bottom: 1px solid rgba(221, 225, 208, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--olive-900);
 }
 
 .hero .container {
-  position: relative;
+  padding: 3.5rem 0 3rem;
 }
 
 .hero h1 {
-  margin: 0.2rem 0 0.7rem;
-  font-size: clamp(1.75rem, 3.2vw, 2.55rem);
-  max-width: 20ch;
+  margin: 0.35rem 0 0.6rem;
+  max-width: 22ch;
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
 }
 
 .hero p {
-  max-width: 72ch;
-  color: var(--muted);
+  color: var(--text-light);
+  max-width: 70ch;
 }
 
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent-2);
+  color: var(--text-light);
   font-weight: 700;
   font-size: 0.78rem;
 }
 
 .btn {
   display: inline-block;
-  background: var(--accent);
-  color: #fff;
+  margin-top: 0.8rem;
+  padding: 0.52rem 0.95rem;
+  border-radius: 9px;
   text-decoration: none;
-  padding: 0.68rem 1rem;
-  border-radius: 0.6rem;
   font-weight: 700;
-  margin-top: 0.7rem;
+  color: var(--accent-fg);
+  background: var(--accent);
 }
 
 main {
-  padding: 2rem 0 5rem;
+  padding: 1.5rem 0 4rem;
   display: grid;
-  gap: 1.05rem;
+  gap: 1rem;
 }
 
 .panel {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 0.85rem;
-  padding: 1.2rem 1.25rem;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.3rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .panel h2 {
-  margin-top: 0;
+  font-size: 1.55rem;
+  margin-bottom: 0.4rem;
+}
+
+.panel h3 {
+  margin: 0.05rem 0 0.4rem;
 }
 
 .grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .two-col {
@@ -97,41 +151,25 @@ main {
 }
 
 .three-col {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.grid > article,
+.timeline-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--olive-500);
+  border-radius: 11px;
+  padding: 0.9rem;
+}
+
+.compact .timeline-item {
+  border-left-color: var(--olive-600);
 }
 
 .timeline {
   display: grid;
-  gap: 0.9rem;
-}
-
-.timeline-item {
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent-2);
-  padding: 0.7rem 1rem 0.85rem;
-  border-radius: 0.65rem;
-  background: var(--surface-soft);
-}
-
-.compact .timeline-item {
-  border-left-width: 3px;
-}
-
-.accordion {
-  display: grid;
-  gap: 0.65rem;
-}
-
-details {
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  padding: 0.55rem 0.8rem;
-  background: var(--surface);
-}
-
-summary {
-  cursor: pointer;
-  font-weight: 700;
+  gap: 0.75rem;
 }
 
 .tracker-grid {
@@ -141,33 +179,60 @@ summary {
 
 .tracker-grid label {
   display: flex;
-  gap: 0.55rem;
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: 0.55rem;
-  padding: 0.7rem 0.8rem;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  border-radius: 10px;
 }
 
 a {
   color: var(--accent);
 }
 
+.ace {
+  color: var(--text);
+}
+
+a:hover {
+  color: var(--olive-950);
+}
+
+.accordion {
+  display: grid;
+  gap: 0.5rem;
+}
+
+details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  padding: 0.55rem 0.8rem;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--olive-950);
+}
+
+ul,
+ol {
+  padding-inline-start: 1.1rem;
+}
+
 .muted {
-  color: var(--muted);
+  color: var(--text-light);
 }
 
-ul, ol {
-  padding-inline-start: 1.2rem;
-}
-
-@media (max-width: 680px) {
-  .hero {
-    padding-top: 3.7rem;
-  }
-
+@media (max-width: 660px) {
   .btn {
     width: 100%;
     text-align: center;
+  }
+
+  .hero .container {
+    padding-top: 2.8rem;
   }
 }
