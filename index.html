@@ -17,11 +17,13 @@
         <div class="nav-links">
           <a href="#start">Start</a>
           <a href="#progression">14 Days</a>
-          <a href="#daily">Daily</a>
-          <a href="#tools">Skills</a>
-          <a href="#resources">Resources</a>
-          <a href="#tracker">Tracker</a>
-        </div>
+        <a href="#daily">Daily</a>
+        <a href="#tools">Skills</a>
+        <a href="#progress">Progress</a>
+        <a href="#resources">Resources</a>
+        <a href="worksheets.html">Worksheets</a>
+        <a href="#tracker">Tracker</a>
+      </div>
       </div>
     </nav>
 
@@ -43,6 +45,7 @@
         <a href="#progression">Progression</a>
         <a href="#daily">Daily timetable</a>
         <a href="#language-map">Language map</a>
+        <a href="#progress">Progress</a>
         <a href="#resources">Deep resources</a>
       </div>
 
@@ -328,6 +331,33 @@
         </div>
       </section>
 
+      <section id="progress" class="panel">
+        <h2>Progress Calendar</h2>
+        <p class="muted">
+          Mark the days you actually practiced. Weekly goal: 5 of 7 days. If you miss a day, the current streak resets to zero.
+        </p>
+        <div class="progress-summary">
+          <div class="summary-card">
+            <span class="summary-label">Current streak</span>
+            <span id="streak-count" class="summary-value">0</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">This week</span>
+            <span id="week-count" class="summary-value">0 / 7</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Weekly goal</span>
+            <span id="goal-state" class="summary-value">Not met</span>
+          </div>
+        </div>
+        <div id="calendar-grid" class="calendar-grid" aria-label="Weekly progress calendar"></div>
+        <div class="calendar-actions">
+          <button id="mark-today" class="btn" type="button">Mark Today</button>
+          <button id="reset-progress" class="btn btn-secondary" type="button">Reset</button>
+        </div>
+        <p id="progress-note" class="muted" aria-live="polite"></p>
+      </section>
+
       <section id="tracker" class="panel">
         <h2>7-Day Consistency Tracker</h2>
         <p class="muted">Track just one check box per day. Small consistency is the point.</p>
@@ -353,6 +383,14 @@
     </main>
 
     <script>
+      const calendarGrid = document.getElementById("calendar-grid");
+      const streakCount = document.getElementById("streak-count");
+      const weekCount = document.getElementById("week-count");
+      const goalState = document.getElementById("goal-state");
+      const progressNote = document.getElementById("progress-note");
+      const markTodayButton = document.getElementById("mark-today");
+      const resetProgressButton = document.getElementById("reset-progress");
+
       const tracker = document.getElementById("tracker-form");
       const result = document.getElementById("tracker-result");
       const chainForm = document.getElementById("chain-form");
@@ -361,6 +399,153 @@
 
       const key = "dbt-tracker-state-v1";
       const chainKey = "dbt-chain-state-v1";
+      const progressKey = "dbt-progress-v1";
+
+      const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+      function isoDate(date) {
+        return date.toISOString().slice(0, 10);
+      }
+
+      function getWeekStart(date) {
+        const d = new Date(date);
+        const day = (d.getDay() + 6) % 7;
+        d.setDate(d.getDate() - day);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function loadProgress() {
+        try {
+          return JSON.parse(localStorage.getItem(progressKey)) || {};
+        } catch {
+          return {};
+        }
+      }
+
+      function saveProgress(state) {
+        localStorage.setItem(progressKey, JSON.stringify(state));
+      }
+
+      function ensureProgressShape(state) {
+        return {
+          days: state.days || {},
+          lastSavedWeek: state.lastSavedWeek || null,
+          currentStreak: Number(state.currentStreak || 0),
+          bestStreak: Number(state.bestStreak || 0),
+          lastCheckedDate: state.lastCheckedDate || null,
+        };
+      }
+
+      function renderCalendar() {
+        const state = ensureProgressShape(loadProgress());
+        const start = getWeekStart(new Date());
+        const today = isoDate(new Date());
+        const cells = [];
+        let weekDone = 0;
+
+        for (let i = 0; i < 7; i += 1) {
+          const d = new Date(start);
+          d.setDate(start.getDate() + i);
+          const dateKey = isoDate(d);
+          const done = !!state.days[dateKey];
+          if (done) weekDone += 1;
+          const label = dayLabels[i];
+          cells.push(`
+            <button class="calendar-day ${done ? "done" : ""} ${dateKey === today ? "today" : ""}" data-date="${dateKey}" type="button">
+              <span class="calendar-day-name">${label}</span>
+              <span class="calendar-day-date">${dateKey.slice(5)}</span>
+              <span class="calendar-day-state">${done ? "Done" : "Open"}</span>
+            </button>
+          `);
+        }
+
+        calendarGrid.innerHTML = cells.join("");
+
+        let currentStreak = 0;
+        const cursor = new Date();
+        cursor.setHours(0, 0, 0, 0);
+        while (state.days[isoDate(cursor)]) {
+          currentStreak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+
+        if (!state.days[today]) {
+          currentStreak = 0;
+        }
+
+        streakCount.textContent = String(currentStreak);
+        weekCount.textContent = `${weekDone} / 7`;
+        goalState.textContent = weekDone >= 5 ? "Met" : "Not met";
+        progressNote.textContent = weekDone >= 5
+          ? "This week meets the goal. Keep the same structure next week."
+          : "Goal is 5 days. One missed day does not break the system, but it does reset the streak.";
+
+        calendarGrid.querySelectorAll("[data-date]").forEach((button) => {
+          button.addEventListener("click", () => toggleDay(button.dataset.date));
+        });
+      }
+
+      function toggleDay(dateKey) {
+        const state = ensureProgressShape(loadProgress());
+        const checked = !!state.days[dateKey];
+        if (checked) {
+          delete state.days[dateKey];
+        } else {
+          state.days[dateKey] = true;
+        }
+
+        const weekStart = getWeekStart(new Date());
+        const currentWeekStart = isoDate(weekStart);
+        const currentWeekDays = dayNames.map((_, i) => {
+          const d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + i);
+          return isoDate(d);
+        });
+
+        if (checked) {
+          progressNote.textContent = "Missed day removed. Current streak will recalculate from today.";
+        } else if (dateKey === isoDate(new Date())) {
+          progressNote.textContent = "Today marked.";
+        } else {
+          progressNote.textContent = "Saved for a previous day.";
+        }
+
+        let currentStreak = 0;
+        const cursor = new Date();
+        cursor.setHours(0, 0, 0, 0);
+        while (state.days[isoDate(cursor)]) {
+          currentStreak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+
+        if (!state.days[isoDate(new Date())]) {
+          currentStreak = 0;
+        }
+
+        state.currentStreak = currentStreak;
+        state.bestStreak = Math.max(state.bestStreak, currentStreak);
+        state.lastSavedWeek = currentWeekStart;
+        state.lastCheckedDate = dateKey;
+        saveProgress(state);
+
+        const weekDone = currentWeekDays.filter((day) => state.days[day]).length;
+        if (weekDone < 5 && !checked) {
+          progressNote.textContent = "Daily mark saved. Keep aiming for 5/7 this week.";
+        }
+        renderCalendar();
+      }
+
+      markTodayButton?.addEventListener("click", () => {
+        toggleDay(isoDate(new Date()));
+      });
+
+      resetProgressButton?.addEventListener("click", () => {
+        localStorage.removeItem(progressKey);
+        progressNote.textContent = "Progress reset.";
+        renderCalendar();
+      });
 
       function updateTracker() {
         const checked = [...tracker.querySelectorAll("input[type=checkbox]")].filter((cb) => cb.checked).length;
@@ -416,6 +601,7 @@
       });
 
       updateTracker();
+      renderCalendar();
     </script>
   </body>
 </html>

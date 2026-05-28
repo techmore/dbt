@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DBT Worksheets</title>
+    <meta
+      name="description"
+      content="Printable DBT worksheets for daily practice, planning, and review."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="topnav" aria-label="Primary">
+      <div class="inner">
+        <a class="brand" href="index.html">DBT Practice (0→1)</a>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="index.html#progress">Progress</a>
+          <a href="#worksheets">Worksheets</a>
+          <a href="#print-pack">Print Pack</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="container">
+        <p class="eyebrow">Printable DBT</p>
+        <h1>Worksheets</h1>
+        <p>
+          One-click printable worksheets for daily practice, chain analysis, weekly review,
+          and communication planning. Use these offline, then return to the main site to track progress.
+        </p>
+        <div class="hero-actions">
+          <button class="btn" id="print-page" type="button">Print This Page</button>
+          <a class="btn btn-secondary" href="index.html">Back to Home</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="worksheets" class="page">
+      <section class="panel">
+        <h2>What to print first</h2>
+        <div class="grid two-col">
+          <article>
+            <h3>Daily</h3>
+            <p>Use one sheet per day for the morning and evening routine.</p>
+          </article>
+          <article>
+            <h3>Weekly</h3>
+            <p>Use one sheet at the end of the week to review goal completion and streaks.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="print-pack" class="panel">
+        <h2>Print Pack</h2>
+        <div class="worksheet-stack">
+          <article class="worksheet-card printable">
+            <div class="worksheet-head">
+              <h3>1. Daily Practice Sheet</h3>
+              <button class="print-small" type="button" data-print-target="daily-sheet">Print</button>
+            </div>
+            <div id="daily-sheet" class="worksheet-body">
+              <div class="worksheet-line"><span>Date</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Focus word</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Morning check-in</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>One skill used</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Evening review</span><span class="line"></span></div>
+            </div>
+          </article>
+
+          <article class="worksheet-card printable">
+            <div class="worksheet-head">
+              <h3>2. Emotion / Trigger / Response Sheet</h3>
+              <button class="print-small" type="button" data-print-target="chain-sheet">Print</button>
+            </div>
+            <div id="chain-sheet" class="worksheet-body">
+              <div class="worksheet-line"><span>Emotion</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Trigger</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Response</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Better next step</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Need help from</span><span class="line"></span></div>
+            </div>
+          </article>
+
+          <article class="worksheet-card printable">
+            <div class="worksheet-head">
+              <h3>3. Weekly Review Sheet</h3>
+              <button class="print-small" type="button" data-print-target="weekly-sheet">Print</button>
+            </div>
+            <div id="weekly-sheet" class="worksheet-body">
+              <div class="worksheet-line"><span>Weekly goal</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Days practiced</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>What helped</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>What derailed me</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Next week adjustment</span><span class="line"></span></div>
+            </div>
+          </article>
+
+          <article class="worksheet-card printable">
+            <div class="worksheet-head">
+              <h3>4. DEAR Request Planner</h3>
+              <button class="print-small" type="button" data-print-target="request-sheet">Print</button>
+            </div>
+            <div id="request-sheet" class="worksheet-body">
+              <div class="worksheet-line"><span>Describe</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Express</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Assert</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Reinforce</span><span class="line"></span></div>
+              <div class="worksheet-line"><span>Stay calm plan</span><span class="line"></span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.getElementById("print-page").addEventListener("click", () => window.print());
+      document.querySelectorAll("[data-print-target]").forEach((button) => {
+        button.addEventListener("click", () => window.print());
+      });
+    </script>
+  </body>
+</html>
