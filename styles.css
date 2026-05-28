@@ -41,6 +41,9 @@
   --green:      #5a8a5e;
   --red:        #c0392b;
   --amber:      #b07d2a;
+  --chart1:     var(--olive-600);
+  --chart2:     #5ba4b5;
+  --container-inline: 1.25rem;
 }
 
 html {
@@ -53,6 +56,7 @@ body {
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  font-size: 15px;
 }
 
 h1, h2, h3, h4 {
@@ -118,8 +122,9 @@ h1, h2, h3, h4 {
   background: var(--accent);
 }
 
-main {
-  padding: 1.5rem 0 4rem;
+.page,
+main.page {
+  padding: 0 0 0;
   display: grid;
   gap: 1rem;
 }
@@ -189,6 +194,7 @@ main {
 
 a {
   color: var(--accent);
+  text-underline-offset: 2px;
 }
 
 .ace {
@@ -197,6 +203,18 @@ a {
 
 a:hover {
   color: var(--olive-950);
+}
+
+.track-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: oklch(52% 0.18 25 / 0.12);
+  color: var(--red);
 }
 
 .accordion {
@@ -232,7 +250,100 @@ ol {
     text-align: center;
   }
 
-  .hero .container {
-    padding-top: 2.8rem;
+  .topnav .inner {
+    justify-content: center;
   }
+
+  .topnav .nav-links {
+    justify-content: center;
+  }
+
+  .hero .container {
+    padding-top: 2.2rem;
+  }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--stone-100); }
+::-webkit-scrollbar-thumb { background: var(--olive-400); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--olive-500); }
+
+.topnav {
+  background: rgba(247, 248, 244, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(221, 225, 208, 0.6);
+  color: var(--stone-800);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.topnav .inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 var(--container-inline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topnav .brand {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--olive-900);
+  text-decoration: none;
+}
+
+.topnav .nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.topnav a {
+  color: var(--stone-600);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+}
+
+.topnav a:hover {
+  background: var(--olive-100);
+  color: var(--olive-800);
+}
+
+.page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.35rem var(--container-inline) 3rem;
+}
+
+.page-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.8rem;
+}
+
+.page-jump-nav a {
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--olive-800);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+}
+
+.page-jump-nav a:hover {
+  background: var(--olive-100);
 }

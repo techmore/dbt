@@ -11,6 +11,20 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <nav class="topnav" aria-label="Primary">
+      <div class="inner">
+        <a class="brand" href="#top">DBT Practice (0→1)</a>
+        <div class="nav-links">
+          <a href="#start">Start</a>
+          <a href="#progression">14 Days</a>
+          <a href="#daily">Daily</a>
+          <a href="#tools">Skills</a>
+          <a href="#resources">Resources</a>
+          <a href="#tracker">Tracker</a>
+        </div>
+      </div>
+    </nav>
+
     <header class="hero">
       <div class="container">
         <p class="eyebrow">DBT Practice System</p>
@@ -24,7 +38,14 @@
       </div>
     </header>
 
-    <main class="container">
+    <main id="top" class="page">
+      <div class="page-jump-nav">
+        <a href="#start">Start here</a>
+        <a href="#progression">Progression</a>
+        <a href="#daily">Daily timetable</a>
+        <a href="#resources">Deep resources</a>
+      </div>
+
       <section id="start" class="panel">
         <h2>Guiding Principle</h2>
         <p>
@@ -53,7 +74,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section id="progression" class="panel">
         <h2>From 0 to 1: the first 14 days</h2>
         <div class="timeline">
           <article class="timeline-item">
@@ -121,7 +142,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section id="tools" class="panel">
         <h2>DBT Tool Set</h2>
         <div class="grid three-col">
           <article>
@@ -176,7 +197,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section id="resources" class="panel">
         <h2>Resources to Go Deeper</h2>
         <p class="muted">
           This library is layered into: <strong>quick video access</strong>, <strong>structured learning</strong>, and
