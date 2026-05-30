@@ -43,7 +43,6 @@ final class TabShellViewController: NSViewController {
     private let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
     private var selectedTab: AppTab?
     private var contentHosts: [AppTab: NSHostingController<AnyView>] = [:]
-    private var tabPrewarmWorkItem: DispatchWorkItem?
 
     private let headerView = NSView()
     private let contentContainer = NSView()
@@ -73,11 +72,6 @@ final class TabShellViewController: NSViewController {
         setupTabBar()
         layoutShell()
         showLaunchPlaceholder()
-    }
-
-    override func viewDidAppear() {
-        super.viewDidAppear()
-        scheduleTabPrewarm()
     }
 
     private func setupHeader() {
@@ -249,21 +243,6 @@ final class TabShellViewController: NSViewController {
         let host = NSHostingController(rootView: tab.rootView)
         contentHosts[tab] = host
         embed(host)
-    }
-
-    private func scheduleTabPrewarm() {
-        tabPrewarmWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.prebuildOffscreenTabs()
-        }
-        tabPrewarmWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: workItem)
-    }
-
-    private func prebuildOffscreenTabs() {
-        for tab in tabs where tab != selectedTab && contentHosts[tab] == nil {
-            contentHosts[tab] = NSHostingController(rootView: tab.rootView)
-        }
     }
 
     private func embed(_ host: NSHostingController<AnyView>) {
