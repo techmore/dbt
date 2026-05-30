@@ -63,12 +63,9 @@ private struct TodayView: View {
         entries.first(where: { calendar.isDateInToday($0.date) })
     }
 
-    private var currentEntry: PracticeEntry {
-        todayEntry ?? PracticeEntry(date: Date())
-    }
-
     private var completedBlocksToday: Int {
-        [currentEntry.morningDone, currentEntry.middayDone, currentEntry.eveningDone, currentEntry.sleepDone].filter { $0 }.count
+        guard let currentEntry = todayEntry else { return 0 }
+        return [currentEntry.morningDone, currentEntry.middayDone, currentEntry.eveningDone, currentEntry.sleepDone].filter { $0 }.count
     }
 
     private var weekSessionCount: Int {
@@ -308,19 +305,10 @@ private struct TodayView: View {
             }
             .background(DBTTheme.surface.opacity(0.5))
             .navigationTitle("DBT Today")
-            .onAppear {
-                seedTodayIfNeeded()
-            }
             .sheet(isPresented: $showChainReview) {
                 ChainReviewView(isPresented: $showChainReview)
             }
         }
-    }
-
-    private func seedTodayIfNeeded() {
-        guard todayEntry == nil else { return }
-        let entry = PracticeEntry(date: Date())
-        modelContext.insert(entry)
     }
 
     private var header: some View {
@@ -468,7 +456,7 @@ private struct TodayView: View {
 
     private func binding(_ keyPath: ReferenceWritableKeyPath<PracticeEntry, Bool>) -> Binding<Bool> {
         Binding(
-            get: { currentEntry[keyPath: keyPath] },
+            get: { todayEntry?[keyPath: keyPath] ?? false },
             set: { newValue in
                 let entry = ensureTodayEntry()
                 entry[keyPath: keyPath] = newValue
