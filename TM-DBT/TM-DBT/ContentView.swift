@@ -54,13 +54,13 @@ private struct DeferredTab<Content: View>: View {
 }
 
 private enum DBTTheme {
-    static let accent = Color(red: 0.31, green: 0.35, blue: 0.22)
-    static let accentSoft = Color(red: 0.52, green: 0.55, blue: 0.40)
-    static let surface = Color(red: 0.95, green: 0.95, blue: 0.91)
-    static let surface2 = Color(red: 0.88, green: 0.89, blue: 0.82)
-    static let border = Color(red: 0.61, green: 0.64, blue: 0.49)
-    static let text = Color(red: 0.16, green: 0.15, blue: 0.13)
-    static let muted = Color(red: 0.41, green: 0.39, blue: 0.35)
+    static let accent = Color(red: 0.78, green: 0.83, blue: 0.58)
+    static let accentSoft = Color(red: 0.87, green: 0.89, blue: 0.74)
+    static let surface = Color(red: 0.11, green: 0.12, blue: 0.09)
+    static let surface2 = Color(red: 0.17, green: 0.18, blue: 0.14)
+    static let border = Color(red: 0.42, green: 0.45, blue: 0.33)
+    static let text = Color.white
+    static let muted = Color.white.opacity(0.72)
 }
 
 private struct TodayView: View {
@@ -335,7 +335,7 @@ private struct TodayView: View {
                 }
                 .padding()
             }
-            .background(DBTTheme.surface.opacity(0.5))
+            .background(DBTTheme.surface)
             .navigationTitle("DBT Today")
             .sheet(isPresented: $showChainReview) {
                 ChainReviewView(isPresented: $showChainReview)
@@ -722,7 +722,7 @@ private struct DiaryView: View {
                         if let entry = entries.first {
                             Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
                                 .font(.footnote)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DBTTheme.muted)
                             LabeledContent("Emotion", value: entry.emotion)
                             LabeledContent("Trigger", value: entry.trigger)
                             LabeledContent("Response", value: entry.response)
@@ -731,7 +731,7 @@ private struct DiaryView: View {
                             }
                         } else {
                             Text("No diary card saved yet.")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(DBTTheme.muted)
                         }
                     } label: {
                         Text("Optional review")
@@ -774,7 +774,7 @@ private struct WorksheetsView: View {
     private func row(_ title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.headline)
-            Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            Text(detail).font(.subheadline).foregroundStyle(DBTTheme.muted)
         }
         .padding(.vertical, 4)
     }
