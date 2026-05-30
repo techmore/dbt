@@ -44,7 +44,7 @@ final class DBTRootViewController: NSViewController {
     private let contentContainer = NSView()
     private var currentHost: NSViewController?
     private var selectedTab: AppTab = .today
-    private let loadingLabel = NSTextField(labelWithString: "Loading...")
+    private let host = NSHostingController(rootView: AnyView(TodayView()))
 
     override func loadView() {
         view = NSView()
@@ -56,6 +56,7 @@ final class DBTRootViewController: NSViewController {
         super.viewDidLoad()
         configureHeader()
         configureContentContainer()
+        attachHost()
     }
 
     override func viewDidAppear() {
@@ -111,11 +112,7 @@ final class DBTRootViewController: NSViewController {
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.wantsLayer = true
         contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
-        loadingLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        loadingLabel.textColor = .secondaryLabelColor
-        loadingLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(contentContainer)
-        contentContainer.addSubview(loadingLabel)
 
         NSLayoutConstraint.activate([
             contentContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: 72),
@@ -123,11 +120,21 @@ final class DBTRootViewController: NSViewController {
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+
+    private func attachHost() {
+        addChild(host)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(host.view)
 
         NSLayoutConstraint.activate([
-            loadingLabel.centerXAnchor.constraint(equalTo: contentContainer.centerXAnchor),
-            loadingLabel.centerYAnchor.constraint(equalTo: contentContainer.centerYAnchor)
+            host.view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            host.view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
         ])
+
+        currentHost = host
     }
 
     @objc private func tabChanged(_ sender: NSSegmentedControl) {
@@ -145,28 +152,7 @@ final class DBTRootViewController: NSViewController {
         guard tab != selectedTab || currentHost == nil else { return }
         selectedTab = tab
 
-        currentHost?.view.removeFromSuperview()
-        currentHost?.removeFromParent()
-
-        loadingLabel.isHidden = false
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            let host = NSHostingController(rootView: self.rootView(for: tab))
-            self.addChild(host)
-            host.view.translatesAutoresizingMaskIntoConstraints = false
-            self.contentContainer.addSubview(host.view)
-
-            NSLayoutConstraint.activate([
-                host.view.topAnchor.constraint(equalTo: self.contentContainer.topAnchor),
-                host.view.leadingAnchor.constraint(equalTo: self.contentContainer.leadingAnchor),
-                host.view.trailingAnchor.constraint(equalTo: self.contentContainer.trailingAnchor),
-                host.view.bottomAnchor.constraint(equalTo: self.contentContainer.bottomAnchor)
-            ])
-
-            self.loadingLabel.isHidden = true
-            self.currentHost = host
-        }
+        host.rootView = rootView(for: tab)
     }
 
     private func rootView(for tab: AppTab) -> AnyView {
