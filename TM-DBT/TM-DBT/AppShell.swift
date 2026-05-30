@@ -66,6 +66,7 @@ final class DBTRootViewController: NSViewController {
     private var currentHost: NSViewController?
     private var hostCache: [AppTab: NSViewController] = [:]
     private var selectedTab: AppTab = .today
+    private var didScheduleHostPrewarm = false
     private let loadingLabel = NSTextField(labelWithString: "Ready")
     private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
 
@@ -77,10 +78,17 @@ final class DBTRootViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        StartupTrace.write("root_view_did_load")
         configureHeader()
         configureContentContainer()
         showPlaceholder()
-        scheduleHostPrewarm()
+        activate(tab: .today)
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        StartupTrace.write("root_view_did_appear")
+        scheduleHostPrewarmIfNeeded()
     }
 
     private func configureHeader() {
@@ -155,19 +163,26 @@ final class DBTRootViewController: NSViewController {
         loadingLabel.stringValue = "Ready"
     }
 
-    private func scheduleHostPrewarm() {
-        let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
-        for (index, tab) in tabs.enumerated() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(900 + (120 * index))) { [weak self] in
-                guard let self else { return }
-                guard self.hostCache[tab] == nil else { return }
+    private func scheduleHostPrewarmIfNeeded() {
+        guard !didScheduleHostPrewarm else { return }
+        didScheduleHostPrewarm = true
+
+        for tab in [AppTab.diary, .worksheets, .resources] {
+            if self.hostCache[tab] == nil {
                 let start = CACurrentMediaTime()
-                _ = self.host(for: tab)
+                _ = self.buildHost(for: tab)
                 let duration = Int((CACurrentMediaTime() - start) * 1000)
                 StartupTrace.write("tab_host_prewarm tab=\(self.tabName(tab)) duration_ms=\(duration)")
                 self.logger.info("tab_host_prewarm tab=\(self.tabName(tab), privacy: .public) duration_ms=\(duration, privacy: .public)")
             }
         }
+    }
+
+    private func activate(tab: AppTab) {
+        let host = hostCache[tab] ?? buildHost(for: tab)
+        currentHost = host
+        ensureAttached(host)
+        hideAllHosts(except: host)
     }
 
     @objc private func tabChanged(_ sender: NSSegmentedControl) {
@@ -190,9 +205,17 @@ final class DBTRootViewController: NSViewController {
 
         loadingLabel.stringValue = "Loading..."
 
+        if let cachedHost = hostCache[tab] {
+            ensureAttached(cachedHost)
+            hideAllHosts(except: cachedHost)
+            loadingLabel.stringValue = "Ready"
+            currentHost = cachedHost
+            return
+        }
+
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            let host = self.host(for: tab)
+            let host = self.hostCache[tab] ?? self.buildHost(for: tab)
             self.ensureAttached(host)
             self.hideAllHosts(except: host)
             self.loadingLabel.stringValue = "Ready"
@@ -203,10 +226,7 @@ final class DBTRootViewController: NSViewController {
         }
     }
 
-    private func host(for tab: AppTab) -> NSViewController {
-        if let cached = hostCache[tab] {
-            return cached
-        }
+    private func buildHost(for tab: AppTab) -> NSViewController {
         let host: NSViewController
         switch tab {
         case .today:
