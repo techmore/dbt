@@ -210,7 +210,7 @@ private struct TodayView: View {
 
     private var howToUseCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("How to use this today")
+            Text("First move")
                 .font(.headline)
             Text("Start with the next action. Use the morning, midday, and nighttime blocks as your daily scaffold.")
                 .font(.subheadline)
