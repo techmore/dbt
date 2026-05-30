@@ -165,6 +165,7 @@ private struct TodayView: View {
     ]
 
     private let eveningSteps = [
+        "If bedtime is 9:30 pm, start wind-down around 8:45 to 9:00 pm",
         "Target 8 hours of sleep",
         "Begin wind-down 30 to 45 minutes before bed",
         "No phone scrolling, new stimulus, or problem-solving during wind-down",
@@ -518,6 +519,9 @@ private struct DiaryView: View {
 
                 Section("Most recent") {
                     if let entry = entries.first {
+                        Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                         LabeledContent("Emotion", value: entry.emotion)
                         LabeledContent("Trigger", value: entry.trigger)
                         LabeledContent("Response", value: entry.response)
@@ -572,13 +576,13 @@ private struct ResourcesView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Core") {
+                Section("Primary") {
                     link("Workbook", "https://techmore.github.io/dbt/worksheets.html")
                     link("Tool guide", "https://techmore.github.io/dbt/tool-guide.html")
-                    link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
-                    link("Behavioral Tech DBT Skills", "https://behavioraltech.org/category/dbt-skills/")
                 }
                 Section("Structured DBT") {
+                    link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
+                    link("Behavioral Tech DBT Skills", "https://behavioraltech.org/category/dbt-skills/")
                     link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
                     link("DBT-LBC", "https://dbt-lbc.org/")
                     link("Find a DBT-trained therapist", "https://www.behavioraltech.org/find-a-therapist-app/")
