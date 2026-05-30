@@ -281,9 +281,7 @@ struct TodayView: View {
                 header
                 howToUseCard
                 currentBlockCard
-                nextBlockCard
-                hourlyScaffoldSection
-                chainActionCard
+                disclosureCard
             }
             .padding()
         }
@@ -364,6 +362,27 @@ struct TodayView: View {
                 steps: Array(nextBlock.steps.prefix(2)),
                 symbol: nextBlock.symbol
             )
+        }
+    }
+
+    private var disclosureCard: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 12) {
+                nextBlockCard
+                hourlyScaffoldSection
+                chainActionCard
+            }
+            .padding(.top, 8)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("More of the day")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(DBTTheme.muted)
+                Text("Open if you want the rest of the scaffold now.")
+                    .font(.subheadline)
+                    .foregroundStyle(DBTTheme.text)
+            }
         }
     }
 
