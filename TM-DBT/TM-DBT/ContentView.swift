@@ -202,6 +202,9 @@ private struct TodayView: View {
             Text("Start small. Do one useful block. Record what happened.")
                 .font(.title2.bold())
                 .foregroundStyle(DBTTheme.text)
+            Text("First move: \(todayPriority)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(DBTTheme.accent)
         }
     }
 
@@ -239,9 +242,6 @@ private struct TodayView: View {
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
             Text("On track means you completed at least one useful block for this phase, not that the day was perfect.")
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
-            Text(todayPriority)
                 .font(.footnote)
                 .foregroundStyle(DBTTheme.muted)
         }
