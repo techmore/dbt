@@ -434,6 +434,21 @@
         <p class="muted">
           Mark the days you actually practiced. Weekly goal: 5 of 7 days. If today is not marked, the current streak stays at zero.
         </p>
+        <div class="week-status" aria-live="polite">
+          <div class="summary-card">
+            <span class="summary-label">Day</span>
+            <span id="week-day-label" class="summary-value">—</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Week phase</span>
+            <span id="week-phase-label" class="summary-value">—</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">On track</span>
+            <span id="week-track-label" class="summary-value">—</span>
+          </div>
+        </div>
+        <p id="week-guidance" class="muted"></p>
         <div class="progress-summary">
           <div class="summary-card">
             <span class="summary-label">Current streak</span>
@@ -482,6 +497,10 @@
 
     <script>
       const calendarGrid = document.getElementById("calendar-grid");
+      const weekDayLabel = document.getElementById("week-day-label");
+      const weekPhaseLabel = document.getElementById("week-phase-label");
+      const weekTrackLabel = document.getElementById("week-track-label");
+      const weekGuidance = document.getElementById("week-guidance");
       const streakCount = document.getElementById("streak-count");
       const weekCount = document.getElementById("week-count");
       const goalState = document.getElementById("goal-state");
@@ -515,6 +534,44 @@
         return d;
       }
 
+      function getWeekPhase(date) {
+        const weekday = date.getDay();
+        if (weekday === 0 || weekday === 6) return "Weekend";
+        if (weekday === 1 || weekday === 2) return "Early week";
+        if (weekday === 3 || weekday === 4) return "Midweek";
+        return "Late week";
+      }
+
+      function getWeekGuidance(phase) {
+        switch (phase) {
+          case "Early week":
+            return "Set the pace, define the target, and start clean.";
+          case "Midweek":
+            return "Protect focus, do not drift, and keep the system active.";
+          case "Late week":
+            return "Catch up, review, adjust, and finish strong.";
+          case "Weekend":
+            return "Maintain structure and do not drop the routine.";
+          default:
+            return "Keep the routine small and repeatable.";
+        }
+      }
+
+      function isOnTrackForPhase(phase, weekDone, currentStreak, todayDone) {
+        switch (phase) {
+          case "Early week":
+            return weekDone >= 1 || todayDone;
+          case "Midweek":
+            return weekDone >= 3 || currentStreak >= 2;
+          case "Late week":
+            return weekDone >= 4 || currentStreak >= 2;
+          case "Weekend":
+            return todayDone || currentStreak >= 3;
+          default:
+            return weekDone >= 1;
+        }
+      }
+
       function loadProgress() {
         try {
           return JSON.parse(localStorage.getItem(progressKey)) || {};
@@ -541,6 +598,8 @@
         const state = ensureProgressShape(loadProgress());
         const start = getWeekStart(new Date());
         const today = isoDate(new Date());
+        const now = new Date();
+        const weekPhase = getWeekPhase(now);
         const cells = [];
         let weekDone = 0;
 
@@ -577,6 +636,12 @@
         streakCount.textContent = String(currentStreak);
         weekCount.textContent = `${weekDone} / 7`;
         goalState.textContent = weekDone >= 5 ? "Met" : "Not met";
+        weekDayLabel.textContent = now.toLocaleDateString(undefined, { weekday: "long" });
+        weekPhaseLabel.textContent = weekPhase;
+        const onTrack = isOnTrackForPhase(weekPhase, weekDone, currentStreak, !!state.days[today]);
+        weekTrackLabel.textContent = onTrack ? "On track" : "Needs focus";
+        weekTrackLabel.dataset.state = onTrack ? "on" : "off";
+        weekGuidance.textContent = getWeekGuidance(weekPhase);
         progressNote.textContent = weekDone >= 5
           ? "This week meets the goal. Keep the same structure next week."
           : "Goal is 5 days. A missed day resets the streak to zero, but the week still counts for review.";

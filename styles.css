@@ -483,6 +483,13 @@ details {
   margin: 0.75rem 0;
 }
 
+.week-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0.9rem 0 0.55rem;
+}
+
 .summary-card {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -504,6 +511,14 @@ details {
   font-family: 'Instrument Serif', serif;
   font-size: 1.5rem;
   color: var(--olive-900);
+}
+
+#week-track-label[data-state="on"] {
+  color: var(--olive-700);
+}
+
+#week-track-label[data-state="off"] {
+  color: #8a3b2d;
 }
 
 .calendar-grid {

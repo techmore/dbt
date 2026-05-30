@@ -39,6 +39,28 @@ private struct TodayView: View {
 
     private let calendar = Calendar.current
 
+    private enum WeekPhase: String {
+        case earlyWeek = "Early week"
+        case midweek = "Midweek"
+        case lateWeek = "Late week"
+        case weekend = "Weekend"
+
+        var title: String { rawValue }
+
+        var guidance: String {
+            switch self {
+            case .earlyWeek:
+                return "Set the pace, define the target, and start clean."
+            case .midweek:
+                return "Protect focus, do not drift, and keep the system active."
+            case .lateWeek:
+                return "Catch up, review, adjust, and finish strong."
+            case .weekend:
+                return "Maintain structure and do not drop the routine."
+            }
+        }
+    }
+
     private var todayEntry: PracticeEntry? {
         entries.first(where: { calendar.isDateInToday($0.date) })
     }
@@ -80,6 +102,47 @@ private struct TodayView: View {
         return streak
     }
 
+    private var weekPhase: WeekPhase {
+        switch calendar.component(.weekday, from: Date()) {
+        case 1, 7:
+            return .weekend
+        case 2, 3:
+            return .earlyWeek
+        case 4, 5:
+            return .midweek
+        default:
+            return .lateWeek
+        }
+    }
+
+    private var isOnTrack: Bool {
+        let todayBlocks = completedBlocksToday
+        let activeDays = weekSessionCount
+        switch weekPhase {
+        case .earlyWeek:
+            return activeDays >= 1 || todayBlocks >= 1
+        case .midweek:
+            return activeDays >= 3 || todayBlocks >= 2
+        case .lateWeek:
+            return activeDays >= 4 || currentStreak >= 2 || todayBlocks >= 2
+        case .weekend:
+            return todayBlocks >= 1 || currentStreak >= 3
+        }
+    }
+
+    private var todayPriority: String {
+        switch weekPhase {
+        case .earlyWeek:
+            return "Start the day with the morning block and set your pace."
+        case .midweek:
+            return "Protect the routine and do not let the day fragment the plan."
+        case .lateWeek:
+            return "Close gaps, finish one block, and prepare the week review."
+        case .weekend:
+            return "Keep one anchor block alive so the routine does not collapse."
+        }
+    }
+
     private let morningSteps = [
         "Body check: jaw, shoulders, breathing, hands, stomach, feet",
         "Choose one focus word: calm, steady, clear, patient, or firm",
@@ -105,6 +168,7 @@ private struct TodayView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    weekStatusCard
                     summaryCard
                     sleepCard
                     checklistCard
@@ -144,6 +208,35 @@ private struct TodayView: View {
         }
     }
 
+    private var weekStatusCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(dayLabel)
+                        .font(.caption.weight(.semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(DBTTheme.muted)
+                    Text(weekPhase.title)
+                        .font(.headline)
+                        .foregroundStyle(DBTTheme.text)
+                }
+                Spacer()
+                Text(isOnTrack ? "On track" : "Needs focus")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(isOnTrack ? DBTTheme.accent : .red)
+            }
+            Text(weekPhase.guidance)
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+            Text(todayPriority)
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
@@ -155,6 +248,12 @@ private struct TodayView: View {
                 .font(.footnote)
                 .foregroundStyle(DBTTheme.muted)
         }
+    }
+
+    private var dayLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: Date())
     }
 
     private func statCard(_ label: String, value: String) -> some View {
