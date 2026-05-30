@@ -15,22 +15,23 @@ final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
 }
 
 final class DBTWindowController: NSWindowController {
+    private let rootViewController = TabShellViewController()
+
     init() {
-        let rootViewController = TabShellViewController()
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1180, height: 820),
-            styleMask: [.borderless],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
-        window.title = ""
+        window.title = "TM-DBT"
         window.isReleasedWhenClosed = false
         window.isOpaque = true
-        window.hasShadow = false
+        window.hasShadow = true
         window.level = .normal
-        window.contentViewController = rootViewController
         window.backgroundColor = NSColor(DBTTheme.surface)
         super.init(window: window)
+        self.window?.contentViewController = rootViewController
     }
 
     @available(*, unavailable)
@@ -204,11 +205,9 @@ final class TabShellViewController: NSViewController {
         if contentHost == nil {
             embedContentHost()
         }
-        DispatchQueue.main.async { [weak self] in
-            self?.renderedTab = tab
-            self?.updateTabButtonStyles()
-            self?.contentHost?.rootView = TabContentHostView(renderedTab: tab)
-        }
+        renderedTab = tab
+        updateTabButtonStyles()
+        contentHost?.rootView = TabContentHostView(renderedTab: tab)
     }
 
     private func embedContentHost() {
