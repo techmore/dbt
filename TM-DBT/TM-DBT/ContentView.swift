@@ -290,23 +290,20 @@ private struct TodayView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    header
-                    howToUseCard
-                    currentBlockCard
-                    nextBlockCard
-                    hourlyScaffoldSection
-                    chainActionCard
-                }
-                .padding()
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                header
+                howToUseCard
+                currentBlockCard
+                nextBlockCard
+                hourlyScaffoldSection
+                chainActionCard
             }
-            .background(DBTTheme.surface)
-            .navigationTitle("DBT Today")
-            .sheet(isPresented: $showChainReview) {
-                ChainReviewView(isPresented: $showChainReview)
-            }
+            .padding()
+        }
+        .background(DBTTheme.surface)
+        .sheet(isPresented: $showChainReview) {
+            ChainReviewView(isPresented: $showChainReview)
         }
     }
 
@@ -439,27 +436,11 @@ private struct ChainReviewView: View {
     @State private var nextTime = ""
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Prompting event") {
-                    TextField("What happened right before?", text: $promptingEvent, axis: .vertical)
-                }
-                Section("Vulnerability factors") {
-                    TextField("Sleep, stress, conflict, food, pain, etc.", text: $vulnerabilityFactors, axis: .vertical)
-                }
-                Section("Body / thoughts / feelings") {
-                    TextField("What did your body do? What were you thinking or feeling?", text: $bodyThoughtsFeelings, axis: .vertical)
-                }
-                Section("Behavior") {
-                    TextField("What did you do?", text: $behavior, axis: .vertical)
-                }
-                Section("Consequence") {
-                    TextField("What happened right after or later?", text: $consequence, axis: .vertical)
-                }
-                Section("Next time") {
-                    TextField("What different step would fit next time?", text: $nextTime, axis: .vertical)
-                }
-                Section {
+        Form {
+            Section {
+                HStack {
+                    Button("Cancel") { isPresented = false }
+                    Spacer()
                     Button("Save hard moment review") {
                         let review = ChainReview(
                             promptingEvent: promptingEvent,
@@ -475,12 +456,29 @@ private struct ChainReviewView: View {
                     .disabled(promptingEvent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .navigationTitle("Hard Moment Review")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { isPresented = false }
-                }
+            Section("Prompting event") {
+                TextField("What happened right before?", text: $promptingEvent, axis: .vertical)
             }
+            Section("Vulnerability factors") {
+                TextField("Sleep, stress, conflict, food, pain, etc.", text: $vulnerabilityFactors, axis: .vertical)
+            }
+            Section("Body / thoughts / feelings") {
+                TextField("What did your body do? What were you thinking or feeling?", text: $bodyThoughtsFeelings, axis: .vertical)
+            }
+            Section("Behavior") {
+                TextField("What did you do?", text: $behavior, axis: .vertical)
+            }
+            Section("Consequence") {
+                TextField("What happened right after or later?", text: $consequence, axis: .vertical)
+            }
+            Section("Next time") {
+                TextField("What different step would fit next time?", text: $nextTime, axis: .vertical)
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            Text("Hard Moment Review")
+                .font(.headline)
+                .padding(.top, 8)
         }
     }
 }
@@ -505,96 +503,95 @@ private struct DiaryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Diary card") {
-                    Picker("Emotion", selection: $emotion) {
-                        ForEach(["Overwhelmed", "Stressed", "Panicked", "Anxious", "Sad", "Angry", "Frozen"], id: \.self) {
-                            Text($0)
-                        }
-                    }
-                    Picker("Trigger", selection: $trigger) {
-                        ForEach([
-                            "Too much pressure + no break",
-                            "Too many things at once",
-                            "Two obligations collided",
-                            "I felt like I had to be on immediately",
-                            "Not enough sleep",
-                            "Hard to identify right now"
-                        ], id: \.self) { Text($0) }
-                    }
-                    Picker("Response", selection: $response) {
-                        ForEach([
-                            "Did nothing / froze",
-                            "Used box breathing",
-                            "Used self-talk / reality check",
-                            "Paused and took a break",
-                            "Did one calming action",
-                            "Used a DBT skill"
-                        ], id: \.self) { Text($0) }
-                    }
-                    TextField("Notes", text: $notes, axis: .vertical)
-                }
-
-                Section {
-                    Button("Save check-in") {
-                        let entry = PracticeEntry(emotion: emotion, trigger: trigger, response: response, notes: notes)
-                        modelContext.insert(entry)
-                        notes = ""
+        Form {
+            Section("Diary card") {
+                Picker("Emotion", selection: $emotion) {
+                    ForEach(["Overwhelmed", "Stressed", "Panicked", "Anxious", "Sad", "Angry", "Frozen"], id: \.self) {
+                        Text($0)
                     }
                 }
+                Picker("Trigger", selection: $trigger) {
+                    ForEach([
+                        "Too much pressure + no break",
+                        "Too many things at once",
+                        "Two obligations collided",
+                        "I felt like I had to be on immediately",
+                        "Not enough sleep",
+                        "Hard to identify right now"
+                    ], id: \.self) { Text($0) }
+                }
+                Picker("Response", selection: $response) {
+                    ForEach([
+                        "Did nothing / froze",
+                        "Used box breathing",
+                        "Used self-talk / reality check",
+                        "Paused and took a break",
+                        "Did one calming action",
+                        "Used a DBT skill"
+                    ], id: \.self) { Text($0) }
+                }
+                TextField("Notes", text: $notes, axis: .vertical)
+            }
 
-                Section {
-                    DisclosureGroup(isExpanded: $showReview) {
-                        if let entry = entries.first {
-                            Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
-                                .font(.footnote)
-                                .foregroundStyle(DBTTheme.muted)
-                            LabeledContent("Emotion", value: entry.emotion)
-                            LabeledContent("Trigger", value: entry.trigger)
-                            LabeledContent("Response", value: entry.response)
-                            if !entry.notes.isEmpty {
-                                LabeledContent("Notes", value: entry.notes)
-                            }
-                        } else {
-                            Text("No diary card saved yet.")
-                                .foregroundStyle(DBTTheme.muted)
-                        }
-                    } label: {
-                        Text("Optional review")
-                    }
+            Section {
+                Button("Save check-in") {
+                    let entry = PracticeEntry(emotion: emotion, trigger: trigger, response: response, notes: notes)
+                    modelContext.insert(entry)
+                    notes = ""
                 }
             }
-            .navigationTitle("Diary")
+
+            Section {
+                DisclosureGroup(isExpanded: $showReview) {
+                    if let entry = entries.first {
+                        Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
+                            .font(.footnote)
+                            .foregroundStyle(DBTTheme.muted)
+                        LabeledContent("Emotion", value: entry.emotion)
+                        LabeledContent("Trigger", value: entry.trigger)
+                        LabeledContent("Response", value: entry.response)
+                        if !entry.notes.isEmpty {
+                            LabeledContent("Notes", value: entry.notes)
+                        }
+                    } else {
+                        Text("No diary card saved yet.")
+                            .foregroundStyle(DBTTheme.muted)
+                    }
+                } label: {
+                    Text("Optional review")
+                }
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            Text("Diary")
+                .font(.headline)
+                .padding(.top, 8)
         }
     }
 }
 
 private struct WorksheetsView: View {
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Use in order") {
-                    row("Daily Practice", detail: "Wake, 2-hour, 4-hour, 6-hour, evening scaffold.")
-                    row("Diary Card", detail: "Brief daily check-in.")
-                    row("Chain Analysis", detail: "After a hard event.")
-                    row("Weekly Review", detail: "Measure and adjust.")
-                    row("DEAR Planner", detail: "One clear request.")
-                    row("Opposite Action", detail: "When urge and goal conflict.")
-                    row("Crisis Plan", detail: "Write before you need it.")
-                }
-
-                Section("Nightly endpoint") {
-                    Text("Night is complete when the diary card is done and lights-out begins.")
-                }
-
-                Section("Printable source") {
-                    Text("Use the companion website for printable worksheets and tool guidance.")
-                    Link("Open the website workbook", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
-                    Link("Open the tool guide on the website", destination: URL(string: "https://techmore.github.io/dbt/tool-guide.html")!)
-                }
+        List {
+            Section("Use in order") {
+                row("Daily Practice", detail: "Wake, 2-hour, 4-hour, 6-hour, evening scaffold.")
+                row("Diary Card", detail: "Brief daily check-in.")
+                row("Chain Analysis", detail: "After a hard event.")
+                row("Weekly Review", detail: "Measure and adjust.")
+                row("DEAR Planner", detail: "One clear request.")
+                row("Opposite Action", detail: "When urge and goal conflict.")
+                row("Crisis Plan", detail: "Write before you need it.")
             }
-            .navigationTitle("Worksheets")
+
+            Section("Nightly endpoint") {
+                Text("Night is complete when the diary card is done and lights-out begins.")
+            }
+
+            Section("Printable source") {
+                Text("Use the companion website for printable worksheets and tool guidance.")
+                Link("Open the website workbook", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
+                Link("Open the tool guide on the website", destination: URL(string: "https://techmore.github.io/dbt/tool-guide.html")!)
+            }
         }
     }
 
@@ -609,33 +606,30 @@ private struct WorksheetsView: View {
 
 private struct ResourcesView: View {
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Primary") {
-                    link("Workbook", "https://techmore.github.io/dbt/worksheets.html")
-                    link("Tool guide", "https://techmore.github.io/dbt/tool-guide.html")
-                }
-                Section("Structured DBT") {
-                    link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
-                    link("Behavioral Tech DBT Skills", "https://behavioraltech.org/category/dbt-skills/")
-                    link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
-                    link("DBT-LBC", "https://dbt-lbc.org/")
-                    link("Find a DBT-trained therapist", "https://www.behavioraltech.org/find-a-therapist-app/")
-                }
-                Section("Reinforcement") {
-                    link("DBT-RU", "https://www.youtube.com/@DBTRU")
-                    link("Peter Attia DBT interview", "https://www.youtube.com/watch?v=qA2sgsxImM8&t=8629s")
-                    link("DBT core skills search", "https://www.youtube.com/results?search_query=DBT+skills+mindfulness+emotion+regulation+distress+tolerance+interpersonal+effectiveness")
-                    link("Wise Mind and opposite action", "https://www.youtube.com/results?search_query=DBT+wise+mind+opposite+action")
-                    link("TIPP skill", "https://www.youtube.com/results?search_query=DBT+TIPP+skill")
-                    link("DEAR MAN", "https://www.youtube.com/results?search_query=DBT+DEAR+MAN")
-                }
-                Section("Backup workbook") {
-                    link("The Dialectical Behavior Therapy Skills Workbook PDF", "https://cursosdepsicologia.com.ar/wp-content/uploads/2021/05/THEDIA1.pdf")
-                    link("DBT Skills Workbook PDF", "https://uploads-ssl.webflow.com/60e4eec45f2723b891728a20/6127c9afb9830c5891f1cfee_DBT-Skills-Workbook.pdf")
-                }
+        List {
+            Section("Primary") {
+                link("Workbook", "https://techmore.github.io/dbt/worksheets.html")
+                link("Tool guide", "https://techmore.github.io/dbt/tool-guide.html")
             }
-            .navigationTitle("Resources")
+            Section("Structured DBT") {
+                link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
+                link("Behavioral Tech DBT Skills", "https://behavioraltech.org/category/dbt-skills/")
+                link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
+                link("DBT-LBC", "https://dbt-lbc.org/")
+                link("Find a DBT-trained therapist", "https://www.behavioraltech.org/find-a-therapist-app/")
+            }
+            Section("Reinforcement") {
+                link("DBT-RU", "https://www.youtube.com/@DBTRU")
+                link("Peter Attia DBT interview", "https://www.youtube.com/watch?v=qA2sgsxImM8&t=8629s")
+                link("DBT core skills search", "https://www.youtube.com/results?search_query=DBT+skills+mindfulness+emotion+regulation+distress+tolerance+interpersonal+effectiveness")
+                link("Wise Mind and opposite action", "https://www.youtube.com/results?search_query=DBT+wise+mind+opposite+action")
+                link("TIPP skill", "https://www.youtube.com/results?search_query=DBT+TIPP+skill")
+                link("DEAR MAN", "https://www.youtube.com/results?search_query=DBT+DEAR+MAN")
+            }
+            Section("Backup workbook") {
+                link("The Dialectical Behavior Therapy Skills Workbook PDF", "https://cursosdepsicologia.com.ar/wp-content/uploads/2021/05/THEDIA1.pdf")
+                link("DBT Skills Workbook PDF", "https://uploads-ssl.webflow.com/60e4eec45f2723b891728a20/6127c9afb9830c5891f1cfee_DBT-Skills-Workbook.pdf")
+            }
         }
     }
 
