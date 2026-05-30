@@ -2,21 +2,25 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var selectedTab: AppTab = .today
+    @State private var selectedTab: AppTab? = nil
 
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                switch selectedTab {
-                case .today:
-                    TodayView()
-                case .diary:
-                    DiaryView()
-                        .modelContainer(PersistenceStore.shared.container)
-                case .worksheets:
-                    WorksheetsView()
-                case .resources:
-                    ResourcesView()
+                if let selectedTab {
+                    switch selectedTab {
+                    case .today:
+                        TodayView()
+                    case .diary:
+                        DiaryView()
+                            .modelContainer(PersistenceStore.shared.container)
+                    case .worksheets:
+                        WorksheetsView()
+                    case .resources:
+                        ResourcesView()
+                    }
+                } else {
+                    launchShell
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -24,6 +28,22 @@ struct ContentView: View {
             tabBar
         }
         .background(DBTTheme.surface)
+    }
+
+    private var launchShell: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("DBT Practice")
+                .font(.headline)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Pick a tab to begin.")
+                .font(.title2.bold())
+                .foregroundStyle(DBTTheme.text)
+            Text("The shell opens first so the app becomes usable before the content loads.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.muted)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
     }
 
     private var tabBar: some View {
