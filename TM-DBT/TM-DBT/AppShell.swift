@@ -44,6 +44,7 @@ final class DBTRootViewController: NSViewController {
     private let contentContainer = NSView()
     private var currentHost: NSViewController?
     private var selectedTab: AppTab = .today
+    private var cachedHosts: [AppTab: NSHostingController<AnyView>] = [:]
 
     override func loadView() {
         view = NSView()
@@ -59,6 +60,7 @@ final class DBTRootViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        prewarmTabs()
     }
 
     private func configureHeader() {
@@ -138,7 +140,8 @@ final class DBTRootViewController: NSViewController {
         currentHost?.view.removeFromSuperview()
         currentHost?.removeFromParent()
 
-        let host = NSHostingController(rootView: rootView(for: tab))
+        let host = cachedHosts[tab] ?? NSHostingController(rootView: rootView(for: tab))
+        cachedHosts[tab] = host
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(host.view)
@@ -151,6 +154,16 @@ final class DBTRootViewController: NSViewController {
         ])
 
         currentHost = host
+    }
+
+    private func prewarmTabs() {
+        let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            for tab in tabs where self.cachedHosts[tab] == nil {
+                self.cachedHosts[tab] = NSHostingController(rootView: self.rootView(for: tab))
+            }
+        }
     }
 
     private func rootView(for tab: AppTab) -> AnyView {
