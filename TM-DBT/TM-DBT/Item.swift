@@ -35,3 +35,32 @@ final class PracticeEntry {
         self.sleepDone = sleepDone
     }
 }
+
+@Model
+final class ChainReview {
+    var date: Date
+    var promptingEvent: String
+    var vulnerabilityFactors: String
+    var bodyThoughtsFeelings: String
+    var behavior: String
+    var consequence: String
+    var nextTime: String
+
+    init(
+        date: Date = .now,
+        promptingEvent: String = "",
+        vulnerabilityFactors: String = "",
+        bodyThoughtsFeelings: String = "",
+        behavior: String = "",
+        consequence: String = "",
+        nextTime: String = ""
+    ) {
+        self.date = date
+        self.promptingEvent = promptingEvent
+        self.vulnerabilityFactors = vulnerabilityFactors
+        self.bodyThoughtsFeelings = bodyThoughtsFeelings
+        self.behavior = behavior
+        self.consequence = consequence
+        self.nextTime = nextTime
+    }
+}

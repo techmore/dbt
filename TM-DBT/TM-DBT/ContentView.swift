@@ -36,6 +36,8 @@ private enum DBTTheme {
 private struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PracticeEntry.date, order: .reverse) private var entries: [PracticeEntry]
+    @Query(sort: \ChainReview.date, order: .reverse) private var chainReviews: [ChainReview]
+    @State private var showChainReview = false
 
     private let calendar = Calendar.current
 
@@ -157,7 +159,7 @@ private struct TodayView: View {
     }
 
     private let morningSteps = [
-        "Body check: jaw, shoulders, breathing, hands, stomach, feet",
+        "Body check: notice what your body is doing right now",
         "Choose one focus word: calm, steady, clear, patient, or firm",
         "3 minutes of paced breathing",
         "Write the one next action after the shower"
@@ -170,8 +172,8 @@ private struct TodayView: View {
     ]
 
     private let eveningSteps = [
-        "Fill out the selector sheet",
-        "Do one diary-card entry",
+        "Fill out the diary card",
+        "Use the selector sheet only if you cannot name what you feel",
         "Start wind-down 30 to 45 minutes before bed",
         "No phone scrolling during wind-down"
     ]
@@ -181,6 +183,7 @@ private struct TodayView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    howToUseCard
                     weekStatusCard
                     nextActionCard
                     summaryCard
@@ -189,9 +192,13 @@ private struct TodayView: View {
                     routineCard(title: "Morning", subtitle: "7 to 12 minutes", steps: morningSteps, symbol: "sunrise.fill")
                     routineCard(title: "Midday", subtitle: "8 to 12 minutes", steps: middaySteps, symbol: "figure.walk")
                     routineCard(title: "Evening", subtitle: "8 to 15 minutes", steps: eveningSteps, symbol: "moon.stars.fill")
+                    chainActionCard
                     quickActions
                     if let entry = todayEntry ?? entries.first {
                         latestCheckIn(entry)
+                    }
+                    if let review = chainReviews.first {
+                        latestChainReview(review)
                     }
                 }
                 .padding()
@@ -200,6 +207,9 @@ private struct TodayView: View {
             .navigationTitle("DBT Today")
             .onAppear {
                 seedTodayIfNeeded()
+            }
+            .sheet(isPresented: $showChainReview) {
+                ChainReviewView(isPresented: $showChainReview)
             }
         }
     }
@@ -222,6 +232,19 @@ private struct TodayView: View {
         }
     }
 
+    private var howToUseCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("How to use this today")
+                .font(.headline)
+            Text("Do the next action first, then use the other blocks only if you have time.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
     private var weekStatusCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
@@ -242,6 +265,9 @@ private struct TodayView: View {
             Text(weekPhase.guidance)
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
+            Text("On track means you completed at least one useful block for this phase, not that the day was perfect.")
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
             Text(todayPriority)
                 .font(.footnote)
                 .foregroundStyle(DBTTheme.muted)
@@ -261,6 +287,24 @@ private struct TodayView: View {
             Text(actionSuccessLine)
                 .font(.footnote)
                 .foregroundStyle(DBTTheme.muted)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private var chainActionCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Chain analysis", systemImage: "arrow.triangle.branch")
+                .font(.headline)
+            Text("Use this after a hard moment. It is the deeper breakdown, not the daily check-in.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+            Button("Review a hard moment") {
+                showChainReview = true
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(DBTTheme.accent)
         }
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -411,9 +455,10 @@ private struct TodayView: View {
                 .font(.headline)
             HStack(spacing: 12) {
                 Link("988", destination: URL(string: "https://988lifeline.org/")!)
-                Link("DBT-RU", destination: URL(string: "https://www.youtube.com/@DBTRU")!)
-                Link("Worksheets", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
-                Link("Chain analysis", destination: URL(string: "https://techmore.github.io/dbt/tool-guide.html#chain-analysis")!)
+                Link("Diary card", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
+                Button("Review a hard moment") {
+                    showChainReview = true
+                }
             }
             .font(.subheadline.weight(.semibold))
             .tint(DBTTheme.accent)
@@ -442,6 +487,89 @@ private struct TodayView: View {
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private func latestChainReview(_ review: ChainReview) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Latest hard moment review", systemImage: "arrow.triangle.branch")
+                .font(.headline)
+            Text("Prompting event: \(review.promptingEvent.isEmpty ? "Not filled in" : review.promptingEvent)")
+            Text("Next time: \(review.nextTime.isEmpty ? "Not filled in" : review.nextTime)")
+        }
+        .font(.subheadline)
+        .foregroundStyle(DBTTheme.text)
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+}
+
+private struct ChainReviewView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \ChainReview.date, order: .reverse) private var reviews: [ChainReview]
+    @Binding var isPresented: Bool
+
+    @State private var promptingEvent = ""
+    @State private var vulnerabilityFactors = ""
+    @State private var bodyThoughtsFeelings = ""
+    @State private var behavior = ""
+    @State private var consequence = ""
+    @State private var nextTime = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Prompting event") {
+                    TextField("What happened right before?", text: $promptingEvent, axis: .vertical)
+                }
+                Section("Vulnerability factors") {
+                    TextField("Sleep, stress, conflict, food, pain, etc.", text: $vulnerabilityFactors, axis: .vertical)
+                }
+                Section("Body / thoughts / feelings") {
+                    TextField("What did your body do? What were you thinking or feeling?", text: $bodyThoughtsFeelings, axis: .vertical)
+                }
+                Section("Behavior") {
+                    TextField("What did you do?", text: $behavior, axis: .vertical)
+                }
+                Section("Consequence") {
+                    TextField("What happened right after or later?", text: $consequence, axis: .vertical)
+                }
+                Section("Next time") {
+                    TextField("What different step would fit next time?", text: $nextTime, axis: .vertical)
+                }
+                Section {
+                    Button("Save hard moment review") {
+                        let review = ChainReview(
+                            promptingEvent: promptingEvent,
+                            vulnerabilityFactors: vulnerabilityFactors,
+                            bodyThoughtsFeelings: bodyThoughtsFeelings,
+                            behavior: behavior,
+                            consequence: consequence,
+                            nextTime: nextTime
+                        )
+                        modelContext.insert(review)
+                        isPresented = false
+                    }
+                    .disabled(promptingEvent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .navigationTitle("Hard Moment Review")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isPresented = false }
+                }
+            }
+            .onAppear {
+                if let review = reviews.first {
+                    promptingEvent = review.promptingEvent
+                    vulnerabilityFactors = review.vulnerabilityFactors
+                    bodyThoughtsFeelings = review.bodyThoughtsFeelings
+                    behavior = review.behavior
+                    consequence = review.consequence
+                    nextTime = review.nextTime
+                }
+            }
+        }
     }
 }
 
@@ -550,16 +678,24 @@ private struct ResourcesView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Core") {
+                    link("Workbook", "https://techmore.github.io/dbt/worksheets.html")
+                    link("Tool guide", "https://techmore.github.io/dbt/tool-guide.html")
+                    link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
+                    link("Behavioral Tech DBT Skills", "https://behavioraltech.org/category/dbt-skills/")
+                }
+                Section("Structured DBT") {
+                    link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
+                    link("DBT-LBC", "https://dbt-lbc.org/")
+                    link("Find a DBT-trained therapist", "https://www.behavioraltech.org/find-a-therapist-app/")
+                }
                 Section("Reinforcement") {
                     link("DBT-RU", "https://www.youtube.com/@DBTRU")
                     link("Peter Attia DBT interview", "https://www.youtube.com/watch?v=qA2sgsxImM8&t=8629s")
                     link("DBT core skills search", "https://www.youtube.com/results?search_query=DBT+skills+mindfulness+emotion+regulation+distress+tolerance+interpersonal+effectiveness")
-                }
-                Section("Core learning") {
-                    link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
-                    link("DBT Skills articles", "https://behavioraltech.org/category/dbt-skills/")
-                    link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
-                    link("DBT-LBC", "https://dbt-lbc.org/")
+                    link("Wise Mind and opposite action", "https://www.youtube.com/results?search_query=DBT+wise+mind+opposite+action")
+                    link("TIPP skill", "https://www.youtube.com/results?search_query=DBT+TIPP+skill")
+                    link("DEAR MAN", "https://www.youtube.com/results?search_query=DBT+DEAR+MAN")
                 }
                 Section("Backup workbook") {
                     link("The Dialectical Behavior Therapy Skills Workbook PDF", "https://cursosdepsicologia.com.ar/wp-content/uploads/2021/05/THEDIA1.pdf")
@@ -597,7 +733,7 @@ private struct SupportView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: PracticeEntry.self, inMemory: true)
+        .modelContainer(for: [PracticeEntry.self, ChainReview.self], inMemory: true)
 }
 
 private var appBackground: Color {

@@ -13,6 +13,7 @@ struct TM_DBTApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             PracticeEntry.self,
+            ChainReview.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
