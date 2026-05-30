@@ -40,8 +40,7 @@ final class DBTWindowController: NSWindowController {
 }
 
 struct ShellRootView: View {
-    @State private var selectedTab: AppTab = .today
-    @State private var todayReady = false
+    @State private var selectedTab: AppTab?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -75,12 +74,10 @@ struct ShellRootView: View {
     private var content: some View {
             Group {
             switch selectedTab {
+            case nil:
+                launchPlaceholder
             case .today:
-                if todayReady {
-                    TodayView()
-                } else {
-                    todayPlaceholder
-                }
+                TodayView()
             case .diary:
                 DiaryView()
             case .worksheets:
@@ -92,13 +89,13 @@ struct ShellRootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var todayPlaceholder: some View {
+    private var launchPlaceholder: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Today")
+            Text("TM-DBT")
                 .font(.headline)
                 .textCase(.uppercase)
                 .foregroundStyle(DBTTheme.muted)
-            Text("Loading the daily scaffold.")
+            Text("Select a tab to open the scaffold.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
         }
@@ -121,9 +118,6 @@ struct ShellRootView: View {
 
     private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
         Button {
-            if tab == .today {
-                todayReady = true
-            }
             selectedTab = tab
         } label: {
             VStack(spacing: 4) {
