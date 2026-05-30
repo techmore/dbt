@@ -30,7 +30,7 @@ struct ContentView: View {
             tabButton(.today, title: "Today", symbol: "sun.max.fill")
             tabButton(.diary, title: "Diary", symbol: "list.clipboard")
             tabButton(.worksheets, title: "Worksheets", symbol: "doc.richtext")
-            tabButton(.resources, title: "Resources", symbol: "play.rectangle.stack")
+            tabButton(.resources, title: "Resources", symbol: "rectangle.stack")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
