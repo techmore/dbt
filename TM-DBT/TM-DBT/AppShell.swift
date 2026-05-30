@@ -3,55 +3,29 @@ import SwiftUI
 
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
-    private var windowController: DBTWindowController?
+    private var shell: DBTWindowShell?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let controller = DBTWindowController()
-        controller.showWindow(nil)
-        controller.window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        windowController = controller
+        NSApp.setActivationPolicy(.regular)
+
+        let shell = DBTWindowShell()
+        shell.show()
+        self.shell = shell
     }
 }
 
-final class DBTWindowController: NSWindowController {
-    private let rootViewController = TabShellViewController()
-
-    init() {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1180, height: 820),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "TM-DBT"
-        window.isReleasedWhenClosed = false
-        window.isOpaque = true
-        window.hasShadow = true
-        window.level = .normal
-        window.backgroundColor = NSColor(DBTTheme.surface)
-        super.init(window: window)
-        self.window?.contentViewController = rootViewController
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-final class TabShellViewController: NSViewController {
-    private let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
-    private var selectedTab: AppTab?
-    private var renderedTab: AppTab?
-
+final class DBTWindowShell: NSObject {
+    private let window: NSWindow
+    private let rootView = NSView()
     private let headerView = NSView()
     private let contentContainer = NSView()
     private let tabBar = NSStackView()
     private let buttonStack = NSStackView()
     private let titleLabel = NSTextField(labelWithString: "TM-DBT")
     private let subtitleLabel = NSTextField(labelWithString: "Daily DBT scaffold")
-    private var contentHost: NSHostingController<TabContentHostView>?
+    private var contentHost: NSHostingView<TabContentHostView>?
+    private var selectedTab: AppTab?
+    private let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
 
     private lazy var tabButtons: [AppTab: NSButton] = [
         .today: makeTabButton(title: "Today", symbol: "sun.max.fill", tab: .today),
@@ -60,18 +34,58 @@ final class TabShellViewController: NSViewController {
         .resources: makeTabButton(title: "Resources", symbol: "rectangle.stack", tab: .resources)
     ]
 
-    override func loadView() {
-        view = NSView()
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
+    override init() {
+        window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1180, height: 820),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        super.init()
+        configureWindow()
+        buildShell()
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    func show() {
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func configureWindow() {
+        window.title = "TM-DBT"
+        window.isReleasedWhenClosed = false
+        window.isOpaque = true
+        window.hasShadow = true
+        window.level = .normal
+        window.backgroundColor = NSColor(DBTTheme.surface)
+        window.contentView = rootView
+        rootView.wantsLayer = true
+        rootView.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
+    }
+
+    private func buildShell() {
         setupHeader()
         setupContent()
         setupTabBar()
-        layoutShell()
+
+        let stack = NSStackView(views: [headerView, contentContainer, tabBar])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.distribution = .fill
+        stack.spacing = 0
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        rootView.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: rootView.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: rootView.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: rootView.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: rootView.bottomAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 72),
+            tabBar.heightAnchor.constraint(equalToConstant: 60),
+            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0)
+        ])
     }
 
     private func setupHeader() {
@@ -112,6 +126,7 @@ final class TabShellViewController: NSViewController {
     private func setupContent() {
         contentContainer.wantsLayer = true
         contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
+
         let label = NSTextField(labelWithString: "Select a tab to open the scaffold.")
         label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = NSColor(DBTTheme.text)
@@ -159,26 +174,6 @@ final class TabShellViewController: NSViewController {
         ])
     }
 
-    private func layoutShell() {
-        let rootStack = NSStackView(views: [headerView, contentContainer, tabBar])
-        rootStack.orientation = .vertical
-        rootStack.alignment = .leading
-        rootStack.distribution = .fill
-        rootStack.spacing = 0
-        rootStack.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(rootStack)
-        NSLayoutConstraint.activate([
-            rootStack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            rootStack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            rootStack.topAnchor.constraint(equalTo: view.topAnchor),
-            rootStack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: 72),
-            tabBar.heightAnchor.constraint(equalToConstant: 60),
-            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0)
-        ])
-    }
-
     private func makeTabButton(title: String, symbol: String, tab: AppTab) -> NSButton {
         let button = NSButton(title: title, target: self, action: #selector(tabSelected(_:)))
         button.tag = tab.tag
@@ -200,29 +195,26 @@ final class TabShellViewController: NSViewController {
     @objc private func tabSelected(_ sender: NSButton) {
         guard let tab = AppTab(tag: sender.tag) else { return }
         selectedTab = tab
-        renderedTab = nil
         updateTabButtonStyles()
-        if contentHost == nil {
-            embedContentHost()
-        }
-        renderedTab = tab
-        updateTabButtonStyles()
-        contentHost?.rootView = TabContentHostView(renderedTab: tab)
+        showTab(tab)
     }
 
-    private func embedContentHost() {
-        let host = NSHostingController(rootView: TabContentHostView(renderedTab: nil))
-        contentHost = host
-        addChild(host)
-        contentContainer.subviews.forEach { $0.removeFromSuperview() }
-        contentContainer.addSubview(host.view)
-        host.view.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            host.view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
-            host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
-            host.view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
-            host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
-        ])
+    private func showTab(_ tab: AppTab) {
+        if contentHost == nil {
+            let host = NSHostingView(rootView: TabContentHostView(renderedTab: tab))
+            contentHost = host
+            contentContainer.subviews.forEach { $0.removeFromSuperview() }
+            contentContainer.addSubview(host)
+            host.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                host.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+                host.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+                host.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+                host.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+            ])
+        } else {
+            contentHost?.rootView = TabContentHostView(renderedTab: tab)
+        }
     }
 
     private func updateTabButtonStyles() {
@@ -285,14 +277,4 @@ private extension AppTab {
         default: return nil
         }
     }
-
-    var title: String {
-        switch self {
-        case .today: return "Today"
-        case .diary: return "Diary"
-        case .worksheets: return "Worksheets"
-        case .resources: return "Resources"
-        }
-    }
-
 }
