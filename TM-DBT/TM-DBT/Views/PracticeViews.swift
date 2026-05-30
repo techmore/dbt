@@ -1,5 +1,4 @@
 import SwiftUI
-import os.log
 
 struct ChainReviewView: View {
     @Binding var isPresented: Bool
@@ -79,7 +78,6 @@ struct DiaryView: View {
     @State private var response = "Did nothing / froze"
     @State private var notes = ""
     @State private var showReview = false
-    private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
 
     var body: some View {
         ScrollView {
@@ -140,12 +138,6 @@ struct DiaryView: View {
                 .font(.headline)
                 .padding(.top, 8)
         }
-        .onAppear {
-            let start = CACurrentMediaTime()
-            loadRecentEntries()
-            logger.info("diary_onAppear kicked off load")
-            logger.info("diary_onAppear setup_ms=\(Int((CACurrentMediaTime() - start) * 1000), privacy: .public)")
-        }
     }
 
     private func sectionCard<Content: View>(
@@ -182,14 +174,12 @@ struct DiaryView: View {
 
     private func loadRecentEntries() {
         store.loadEntriesAsync { loaded in
-            let start = CACurrentMediaTime()
             let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
             let recent = loaded
                 .filter { $0.date >= cutoff }
                 .sorted { $0.date > $1.date }
             DispatchQueue.main.async {
                 entries = recent
-                logger.info("diary_entries_loaded count=\(recent.count, privacy: .public) duration_ms=\(Int((CACurrentMediaTime() - start) * 1000), privacy: .public)")
             }
         }
     }

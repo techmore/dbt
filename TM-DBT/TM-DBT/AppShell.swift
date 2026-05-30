@@ -1,6 +1,6 @@
 import AppKit
-import Combine
 import SwiftUI
+import Combine
 
 final class AppShellState: ObservableObject {
     @Published var selectedTab: AppTab = .today
