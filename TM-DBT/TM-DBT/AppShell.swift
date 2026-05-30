@@ -76,7 +76,6 @@ final class TabShellViewController: NSViewController {
         setupContent()
         setupTabBar()
         layoutShell()
-        embedContentHost()
     }
 
     private func setupHeader() {
@@ -117,6 +116,15 @@ final class TabShellViewController: NSViewController {
     private func setupContent() {
         contentContainer.wantsLayer = true
         contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
+        let label = NSTextField(labelWithString: "Select a tab to open the scaffold.")
+        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.textColor = NSColor(DBTTheme.text)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            label.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16)
+        ])
     }
 
     private func setupTabBar() {
@@ -198,6 +206,9 @@ final class TabShellViewController: NSViewController {
         shellState.selectedTab = tab
         shellState.renderedTab = nil
         updateTabButtonStyles()
+        if contentHost == nil {
+            embedContentHost()
+        }
         DispatchQueue.main.async { [weak self] in
             self?.shellState.renderedTab = tab
         }
@@ -207,6 +218,7 @@ final class TabShellViewController: NSViewController {
         let host = NSHostingController(rootView: TabContentHostView(shellState: shellState))
         contentHost = host
         addChild(host)
+        contentContainer.subviews.forEach { $0.removeFromSuperview() }
         contentContainer.addSubview(host.view)
         host.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
