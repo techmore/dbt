@@ -105,21 +105,47 @@ private struct TodayView: View {
 
     private var weekSessionCount: Int {
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        return entries.filter { entry in
-            calendar.isDate(entry.date, equalTo: weekStart, toGranularity: .weekOfYear)
-                && [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true)
-        }.count
+        var count = 0
+        for entry in entries {
+            if entry.date < weekStart {
+                break
+            }
+            if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
+                count += 1
+            }
+        }
+        return count
     }
 
     private var currentStreak: Int {
-        let dayEntries = Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
         var streak = 0
-        var cursor = calendar.startOfDay(for: Date())
-        while let entry = dayEntries[cursor]?.first,
-              [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
-            streak += 1
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = previous
+        var expectedDay = calendar.startOfDay(for: Date())
+        var index = 0
+
+        while index < entries.count {
+            let entry = entries[index]
+            let entryDay = calendar.startOfDay(for: entry.date)
+
+            if entryDay > expectedDay {
+                index += 1
+                continue
+            }
+
+            if entryDay < expectedDay {
+                break
+            }
+
+            if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
+                streak += 1
+                guard let previous = calendar.date(byAdding: .day, value: -1, to: expectedDay) else { break }
+                expectedDay = previous
+            } else {
+                break
+            }
+
+            while index < entries.count, calendar.isDate(entries[index].date, inSameDayAs: entryDay) {
+                index += 1
+            }
         }
         return streak
     }
@@ -468,10 +494,14 @@ private struct TodayView: View {
     }
 
     private var dayLabel: String {
+        Self.dayFormatter.string(from: Date())
+    }
+
+    private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
-        return formatter.string(from: Date())
-    }
+        return formatter
+    }()
 
     private func statCard(_ label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -535,7 +565,6 @@ private struct TodayView: View {
 
 private struct ChainReviewView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \ChainReview.date, order: .reverse) private var reviews: [ChainReview]
     @Binding var isPresented: Bool
 
     @State private var promptingEvent = ""
@@ -586,16 +615,6 @@ private struct ChainReviewView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }
-                }
-            }
-            .onAppear {
-                if let review = reviews.first {
-                    promptingEvent = review.promptingEvent
-                    vulnerabilityFactors = review.vulnerabilityFactors
-                    bodyThoughtsFeelings = review.bodyThoughtsFeelings
-                    behavior = review.behavior
-                    consequence = review.consequence
-                    nextTime = review.nextTime
                 }
             }
         }
