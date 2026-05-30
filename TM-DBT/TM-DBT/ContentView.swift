@@ -15,9 +15,6 @@ struct ContentView: View {
 
             ResourcesView()
                 .tabItem { Label("Resources", systemImage: "play.rectangle.stack") }
-
-            SupportView()
-                .tabItem { Label("Support", systemImage: "lifepreserver") }
         }
         .tint(DBTTheme.accent)
     }
@@ -605,26 +602,6 @@ private struct ResourcesView: View {
 
     private func link(_ title: String, _ urlString: String) -> some View {
         Link(title, destination: URL(string: urlString)!)
-    }
-}
-
-private struct SupportView: View {
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Quick support") {
-                    Link("988 Lifeline", destination: URL(string: "https://988lifeline.org/")!)
-                    Link("Find DBT-trained clinicians", destination: URL(string: "https://www.behavioraltech.org/find-a-therapist-app/")!)
-                    Link("SASH BPD support", destination: URL(string: "https://www.sashbear.org/")!)
-                }
-                Section("Short rules") {
-                    Text("Use the smallest tool that fits the moment.")
-                    Text("Diary card is a check-in, not a rumination sink.")
-                    Text("Chain analysis is for learning after a rough event.")
-                }
-            }
-            .navigationTitle("Support")
-        }
     }
 }
 
