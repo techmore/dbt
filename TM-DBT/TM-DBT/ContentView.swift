@@ -65,6 +65,7 @@ struct ContentView: View {
 
 struct TodayView: View {
     @State private var showChainReview = false
+    @State private var showFullScaffold = false
 
     private let calendar = Calendar.current
 
@@ -281,7 +282,11 @@ struct TodayView: View {
                 header
                 howToUseCard
                 currentBlockCard
-                disclosureCard
+                if showFullScaffold {
+                    disclosureCard
+                } else {
+                    scaffoldPrompt
+                }
             }
             .padding()
         }
@@ -314,6 +319,30 @@ struct TodayView: View {
             Text("If you feel lost, follow the hour groups in order: wake, 2 hours, 4 hours, 6 hours, evening.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
+            Button("Open full scaffold") {
+                showFullScaffold = true
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private var scaffoldPrompt: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Full scaffold is collapsed at launch")
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Open it when you want the rest of the day mapped out.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+            Button("Show full scaffold") {
+                showFullScaffold = true
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(DBTTheme.accent)
         }
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
