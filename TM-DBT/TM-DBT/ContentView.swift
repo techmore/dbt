@@ -67,10 +67,20 @@ private enum DBTTheme {
 
 private struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \PracticeEntry.date, order: .reverse) private var entries: [PracticeEntry]
+    @Query private var entries: [PracticeEntry]
     @State private var showChainReview = false
 
     private let calendar = Calendar.current
+    private let historyWindowDays = 30
+
+    init() {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
+        _entries = Query(
+            filter: #Predicate<PracticeEntry> { $0.date >= cutoff },
+            sort: \PracticeEntry.date,
+            order: .reverse
+        )
+    }
 
     private enum WeekPhase: String {
         case earlyWeek = "Early week"
@@ -623,13 +633,22 @@ private struct ChainReviewView: View {
 
 private struct DiaryView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \PracticeEntry.date, order: .reverse) private var entries: [PracticeEntry]
+    @Query private var entries: [PracticeEntry]
 
     @State private var emotion = "Overwhelmed"
     @State private var trigger = "Too much pressure + no break"
     @State private var response = "Did nothing / froze"
     @State private var notes = ""
     @State private var showReview = false
+
+    init() {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
+        _entries = Query(
+            filter: #Predicate<PracticeEntry> { $0.date >= cutoff },
+            sort: \PracticeEntry.date,
+            order: .reverse
+        )
+    }
 
     var body: some View {
         NavigationStack {
