@@ -143,6 +143,19 @@ private struct TodayView: View {
         }
     }
 
+    private var nextActionTitle: String {
+        switch weekPhase {
+        case .earlyWeek:
+            return "Today’s next action"
+        case .midweek:
+            return "Today’s next action"
+        case .lateWeek:
+            return "Today’s next action"
+        case .weekend:
+            return "Today’s next action"
+        }
+    }
+
     private let morningSteps = [
         "Body check: jaw, shoulders, breathing, hands, stomach, feet",
         "Choose one focus word: calm, steady, clear, patient, or firm",
@@ -169,6 +182,7 @@ private struct TodayView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     header
                     weekStatusCard
+                    nextActionCard
                     summaryCard
                     sleepCard
                     checklistCard
@@ -237,6 +251,22 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
+    private var nextActionCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(nextActionTitle)
+                .font(.headline)
+            Text(todayPriority)
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+            Text(actionSuccessLine)
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
@@ -254,6 +284,19 @@ private struct TodayView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         return formatter.string(from: Date())
+    }
+
+    private var actionSuccessLine: String {
+        switch weekPhase {
+        case .earlyWeek:
+            return "Success looks like starting clean and doing the first useful block."
+        case .midweek:
+            return "Success looks like staying with the plan instead of getting pulled around."
+        case .lateWeek:
+            return "Success looks like closing one gap before the week ends."
+        case .weekend:
+            return "Success looks like keeping one anchor habit alive."
+        }
     }
 
     private func statCard(_ label: String, value: String) -> some View {
@@ -370,6 +413,7 @@ private struct TodayView: View {
                 Link("988", destination: URL(string: "https://988lifeline.org/")!)
                 Link("DBT-RU", destination: URL(string: "https://www.youtube.com/@DBTRU")!)
                 Link("Worksheets", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
+                Link("Chain analysis", destination: URL(string: "https://techmore.github.io/dbt/tool-guide.html#chain-analysis")!)
             }
             .font(.subheadline.weight(.semibold))
             .tint(DBTTheme.accent)
@@ -506,12 +550,12 @@ private struct ResourcesView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("YouTube reinforcement") {
+                Section("Reinforcement") {
                     link("DBT-RU", "https://www.youtube.com/@DBTRU")
                     link("Peter Attia DBT interview", "https://www.youtube.com/watch?v=qA2sgsxImM8&t=8629s")
                     link("DBT core skills search", "https://www.youtube.com/results?search_query=DBT+skills+mindfulness+emotion+regulation+distress+tolerance+interpersonal+effectiveness")
                 }
-                Section("Structured learning") {
+                Section("Core learning") {
                     link("Behavioral Tech overview", "https://archive.behavioraltech.org/dialectical-behavior-therapy-dbt/")
                     link("DBT Skills articles", "https://behavioraltech.org/category/dbt-skills/")
                     link("DBT Self Help diary cards", "https://dbtselfhelp.com/diary-cards/")
