@@ -30,11 +30,11 @@
   --stone-800: #292524;
   --stone-900: #1c1917;
 
-  --bg:         var(--olive-300);
-  --surface:    rgba(238, 240, 230, 0.92);
-  --surface2:   rgba(221, 225, 208, 0.88);
-  --surface3:   rgba(247, 248, 244, 0.74);
-  --border:     rgba(166, 174, 139, 0.95);
+  --bg:         #c4cab1;
+  --surface:    rgba(236, 238, 227, 0.96);
+  --surface2:   rgba(218, 223, 204, 0.94);
+  --surface3:   rgba(247, 248, 244, 0.86);
+  --border:     rgba(145, 154, 118, 0.98);
   --text:       var(--stone-800);
   --text-light: var(--stone-500);
   --accent:     var(--olive-700);
@@ -44,7 +44,7 @@
   --amber:      #b07d2a;
   --chart1:     var(--olive-600);
   --chart2:     #5ba4b5;
-  --container-inline: 1.25rem;
+  --container-inline: 1rem;
 }
 
 html {
@@ -55,8 +55,8 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   background:
     linear-gradient(rgba(247, 248, 244, 0.26), rgba(247, 248, 244, 0.26)),
-    radial-gradient(circle at top left, rgba(110, 117, 75, 0.14), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(71, 74, 52, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(110, 117, 75, 0.10), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(71, 74, 52, 0.06), transparent 24%),
     var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -86,22 +86,22 @@ h1, h2, h3, h4 {
 }
 
 .hero {
-  background: rgba(247, 248, 244, 0.84);
-  border-bottom: 1px solid rgba(166, 174, 139, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(247, 248, 244, 0.92);
+  border-bottom: 1px solid rgba(145, 154, 118, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: var(--olive-900);
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
 
 .hero .container {
-  padding: 2rem 0 1.55rem;
+  padding: 1.55rem 0 1.2rem;
 }
 
 .hero h1 {
   margin: 0.35rem 0 0.6rem;
   max-width: 22ch;
-  font-size: clamp(1.7rem, 2.6vw, 2.1rem);
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
 }
 
 .hero p {
@@ -121,7 +121,7 @@ h1, h2, h3, h4 {
   display: inline-block;
   margin-top: 0.8rem;
   padding: 0.5rem 0.9rem;
-  border-radius: 7px;
+  border-radius: 6px;
   text-decoration: none;
   font-weight: 700;
   color: var(--accent-fg);
@@ -139,10 +139,10 @@ main.page {
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1.15rem 1.2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(1px);
 }
 
 .panel h2 {
@@ -178,8 +178,8 @@ main.page {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-left: 4px solid var(--olive-500);
-  border-radius: 8px;
-  padding: 0.85rem 0.9rem;
+  border-radius: 6px;
+  padding: 0.75rem 0.85rem;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
 }
 
@@ -202,8 +202,8 @@ main.page {
 .key-card {
   background: var(--surface3);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.8rem 0.85rem;
+  border-radius: 6px;
+  padding: 0.75rem 0.8rem;
 }
 
 .key-card h3 {
@@ -379,15 +379,15 @@ details {
 ::-webkit-scrollbar-thumb:hover { background: var(--olive-500); }
 
 .topnav {
-  background: rgba(247, 248, 244, 0.86);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(166, 174, 139, 0.55);
+  background: rgba(247, 248, 244, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(145, 154, 118, 0.62);
   color: var(--stone-800);
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .topnav .inner {
@@ -397,14 +397,14 @@ details {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 56px;
+  min-height: 52px;
   gap: 12px;
   flex-wrap: wrap;
 }
 
 .topnav .brand {
   font-family: 'Instrument Serif', serif;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--olive-900);
   text-decoration: none;
@@ -421,8 +421,8 @@ details {
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
-  padding: 0.4rem 0.75rem;
-  border-radius: 5px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
   border: 1px solid transparent;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -454,8 +454,8 @@ details {
   color: var(--olive-800);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  padding: 0.32rem 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -493,8 +493,8 @@ details {
 .summary-card {
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.8rem 0.9rem;
+  border-radius: 6px;
+  padding: 0.7rem 0.8rem;
 }
 
 .summary-label {
@@ -533,7 +533,7 @@ details {
   padding: 0.75rem 0.55rem;
   border: 1px solid var(--border);
   background: var(--surface2);
-  border-radius: 8px;
+  border-radius: 6px;
   text-align: left;
   cursor: pointer;
   color: inherit;
@@ -574,8 +574,8 @@ details {
 .worksheet-card {
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.9rem;
+  border-radius: 6px;
+  padding: 0.8rem;
 }
 
 .worksheet-head {
@@ -590,7 +590,7 @@ details {
   background: var(--surface);
   color: var(--olive-900);
   padding: 0.35rem 0.6rem;
-  border-radius: 6px;
+  border-radius: 4px;
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
@@ -697,7 +697,7 @@ details {
 .asset-card {
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 0.9rem 0.95rem;
 }
 

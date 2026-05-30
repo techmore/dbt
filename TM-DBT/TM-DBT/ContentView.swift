@@ -24,13 +24,13 @@ struct ContentView: View {
 }
 
 private enum DBTTheme {
-    static let accent = Color(red: 0.36, green: 0.40, blue: 0.27)
-    static let accentSoft = Color(red: 0.55, green: 0.58, blue: 0.43)
-    static let surface = Color(red: 0.96, green: 0.96, blue: 0.93)
-    static let surface2 = Color(red: 0.91, green: 0.92, blue: 0.86)
-    static let border = Color(red: 0.68, green: 0.70, blue: 0.57)
-    static let text = Color(red: 0.17, green: 0.16, blue: 0.14)
-    static let muted = Color(red: 0.43, green: 0.41, blue: 0.38)
+    static let accent = Color(red: 0.31, green: 0.35, blue: 0.22)
+    static let accentSoft = Color(red: 0.52, green: 0.55, blue: 0.40)
+    static let surface = Color(red: 0.95, green: 0.95, blue: 0.91)
+    static let surface2 = Color(red: 0.88, green: 0.89, blue: 0.82)
+    static let border = Color(red: 0.61, green: 0.64, blue: 0.49)
+    static let text = Color(red: 0.16, green: 0.15, blue: 0.13)
+    static let muted = Color(red: 0.41, green: 0.39, blue: 0.35)
 }
 
 private struct TodayView: View {
