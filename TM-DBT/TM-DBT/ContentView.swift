@@ -20,30 +20,13 @@ struct ContentView: View {
                         ResourcesView()
                     }
                 } else {
-                    launchShell
+                    Color.clear
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
             tabBar
         }
         .background(DBTTheme.surface)
-    }
-
-    private var launchShell: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("DBT Practice")
-                .font(.headline)
-                .foregroundStyle(DBTTheme.muted)
-            Text("Pick a tab to begin.")
-                .font(.title2.bold())
-                .foregroundStyle(DBTTheme.text)
-            Text("The shell opens first so the app becomes usable before the content loads.")
-                .font(.subheadline)
-                .foregroundStyle(DBTTheme.muted)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding()
     }
 
     private var tabBar: some View {
