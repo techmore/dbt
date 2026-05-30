@@ -158,10 +158,15 @@ final class DBTRootViewController: NSViewController {
             currentHost = cachedHost
             return
         }
-        let host = buildHost(for: tab)
-        ensureAttached(host)
-        hideAllHosts(except: host)
-        currentHost = host
+        loadingLabel.stringValue = "Loading..."
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let host = self.hostCache[tab] ?? self.buildHost(for: tab)
+            self.ensureAttached(host)
+            self.hideAllHosts(except: host)
+            self.loadingLabel.stringValue = "Select a tab"
+            self.currentHost = host
+        }
     }
 
     private func buildHost(for tab: AppTab) -> NSViewController {
