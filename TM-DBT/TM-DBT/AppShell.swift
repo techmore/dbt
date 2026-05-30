@@ -1,5 +1,11 @@
 import AppKit
+import Combine
 import SwiftUI
+
+final class AppShellState: ObservableObject {
+    @Published var selectedTab: AppTab = .today
+}
+
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: DBTWindowController?
@@ -15,7 +21,7 @@ final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
 
 final class DBTWindowController: NSWindowController {
     init() {
-        let rootViewController = DBTRootViewController()
+        let rootViewController = NSHostingController(rootView: ShellRootView())
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1180, height: 820),
             styleMask: [.borderless],
@@ -38,171 +44,88 @@ final class DBTWindowController: NSWindowController {
     }
 }
 
-final class DBTRootViewController: NSViewController {
-    private let segmentedControl = NSSegmentedControl(labels: ["Today", "Diary", "Worksheets", "Resources"], trackingMode: .selectOne, target: nil, action: nil)
-    private let contentContainer = NSView()
-    private var currentHost: NSViewController?
-    private var hostCache: [AppTab: NSViewController] = [:]
-    private var selectedTab: AppTab = .today
-    private let loadingLabel = NSTextField(labelWithString: "Ready")
+struct ShellRootView: View {
+    @StateObject private var state = AppShellState()
 
-    override func loadView() {
-        view = NSView()
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        configureHeader()
-        configureContentContainer()
-        showPlaceholder()
-    }
-
-    private func configureHeader() {
-        segmentedControl.segmentStyle = .rounded
-        segmentedControl.selectedSegment = 0
-        segmentedControl.target = self
-        segmentedControl.action = #selector(tabChanged(_:))
-
-        let bar = NSView()
-        bar.wantsLayer = true
-        bar.layer?.backgroundColor = NSColor(DBTTheme.surface2).cgColor
-        bar.translatesAutoresizingMaskIntoConstraints = false
-
-        let title = NSTextField(labelWithString: "TM-DBT")
-        title.font = .systemFont(ofSize: 14, weight: .semibold)
-        title.textColor = .white
-        title.translatesAutoresizingMaskIntoConstraints = false
-
-        let subtitle = NSTextField(labelWithString: "Daily DBT scaffold")
-        subtitle.font = .systemFont(ofSize: 11, weight: .medium)
-        subtitle.textColor = .secondaryLabelColor
-        subtitle.translatesAutoresizingMaskIntoConstraints = false
-
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(bar)
-        bar.addSubview(title)
-        bar.addSubview(subtitle)
-        bar.addSubview(segmentedControl)
-
-        NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: view.topAnchor),
-            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bar.heightAnchor.constraint(equalToConstant: 72),
-
-            title.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 18),
-            title.topAnchor.constraint(equalTo: bar.topAnchor, constant: 12),
-
-            subtitle.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            subtitle.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2),
-
-            segmentedControl.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -18),
-            segmentedControl.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-        ])
-    }
-
-    private func configureContentContainer() {
-        contentContainer.translatesAutoresizingMaskIntoConstraints = false
-        contentContainer.wantsLayer = true
-        contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
-        loadingLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        loadingLabel.textColor = .secondaryLabelColor
-        loadingLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(contentContainer)
-        contentContainer.addSubview(loadingLabel)
-
-        NSLayoutConstraint.activate([
-            contentContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: 72),
-            contentContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            contentContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        NSLayoutConstraint.activate([
-            loadingLabel.centerXAnchor.constraint(equalTo: contentContainer.centerXAnchor),
-            loadingLabel.centerYAnchor.constraint(equalTo: contentContainer.centerYAnchor)
-        ])
-    }
-
-    private func showPlaceholder() {
-        loadingLabel.stringValue = "Select a tab"
-    }
-
-    private func activate(tab: AppTab) {
-        let host = hostCache[tab] ?? buildHost(for: tab)
-        currentHost = host
-        ensureAttached(host)
-        hideAllHosts(except: host)
-    }
-
-    @objc private func tabChanged(_ sender: NSSegmentedControl) {
-        let newTab: AppTab
-        switch sender.selectedSegment {
-        case 0: newTab = .today
-        case 1: newTab = .diary
-        case 2: newTab = .worksheets
-        default: newTab = .resources
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            content
+            tabBar
         }
-        updateContent(for: newTab)
+        .background(DBTTheme.surface)
     }
 
-    private func updateContent(for tab: AppTab) {
-        guard tab != selectedTab || currentHost == nil else { return }
-        selectedTab = tab
-        if let cachedHost = hostCache[tab] {
-            ensureAttached(cachedHost)
-            hideAllHosts(except: cachedHost)
-            currentHost = cachedHost
-            return
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("TM-DBT")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("Daily DBT scaffold")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(DBTTheme.muted)
+            }
+            Spacer()
         }
-        loadingLabel.stringValue = "Loading..."
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            let host = self.hostCache[tab] ?? self.buildHost(for: tab)
-            self.ensureAttached(host)
-            self.hideAllHosts(except: host)
-            self.loadingLabel.stringValue = "Select a tab"
-            self.currentHost = host
-        }
+        .padding(.horizontal, 18)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .frame(height: 72, alignment: .top)
+        .background(DBTTheme.surface2)
+        .overlay(Rectangle().frame(height: 1).foregroundStyle(DBTTheme.border), alignment: .bottom)
     }
 
-    private func buildHost(for tab: AppTab) -> NSViewController {
-        let host: NSViewController
-        switch tab {
-        case .today:
-            host = NSHostingController(rootView: TodayView())
-        case .diary:
-            host = NSHostingController(rootView: DiaryView())
-        case .worksheets:
-            host = NSHostingController(rootView: WorksheetsView())
-        case .resources:
-            host = NSHostingController(rootView: ResourcesView())
+    @ViewBuilder
+    private var content: some View {
+        Group {
+            switch state.selectedTab {
+            case .today:
+                TodayView()
+            case .diary:
+                DiaryView()
+            case .worksheets:
+                WorksheetsView()
+            case .resources:
+                ResourcesView()
+            }
         }
-        hostCache[tab] = host
-        return host
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func ensureAttached(_ host: NSViewController) {
-        guard host.view.superview == nil else { return }
-        addChild(host)
-        host.view.translatesAutoresizingMaskIntoConstraints = false
-        host.view.isHidden = true
-        contentContainer.addSubview(host.view)
-
-        NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
-            host.view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
-            host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
-            host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
-        ])
+    private var tabBar: some View {
+        HStack(spacing: 10) {
+            tabButton(.today, title: "Today", symbol: "sun.max.fill")
+            tabButton(.diary, title: "Diary", symbol: "list.clipboard")
+            tabButton(.worksheets, title: "Worksheets", symbol: "doc.richtext")
+            tabButton(.resources, title: "Resources", symbol: "rectangle.stack")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(DBTTheme.surface2)
+        .overlay(Rectangle().frame(height: 1).foregroundStyle(DBTTheme.border), alignment: .top)
     }
 
-    private func hideAllHosts(except visibleHost: NSViewController) {
-        for host in hostCache.values {
-            host.view.isHidden = host !== visibleHost
+    private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
+        Button {
+            state.selectedTab = tab
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.subheadline.weight(.semibold))
+                Text(title)
+                    .font(.caption.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .foregroundStyle(state.selectedTab == tab ? DBTTheme.text : DBTTheme.muted)
+            .background(state.selectedTab == tab ? DBTTheme.accent.opacity(0.18) : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(state.selectedTab == tab ? DBTTheme.accent : Color.clear, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
