@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @main
@@ -39,10 +40,13 @@ final class DBTWindowController: NSWindowController {
     }
 }
 
+final class ShellState: ObservableObject {
+    @Published var selectedTab: AppTab?
+}
+
 final class TabShellViewController: NSViewController {
     private let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
-    private var selectedTab: AppTab?
-    private var contentHosts: [AppTab: NSHostingController<AnyView>] = [:]
+    private let shellState = ShellState()
 
     private let headerView = NSView()
     private let contentContainer = NSView()
@@ -50,7 +54,7 @@ final class TabShellViewController: NSViewController {
     private let buttonStack = NSStackView()
     private let titleLabel = NSTextField(labelWithString: "TM-DBT")
     private let subtitleLabel = NSTextField(labelWithString: "Daily DBT scaffold")
-    private let placeholderLabel = NSTextField(labelWithString: "Select a tab to open the scaffold.")
+    private var contentHost: NSHostingController<TabContentHostView>?
 
     private lazy var tabButtons: [AppTab: NSButton] = [
         .today: makeTabButton(title: "Today", symbol: "sun.max.fill", tab: .today),
@@ -71,7 +75,7 @@ final class TabShellViewController: NSViewController {
         setupContent()
         setupTabBar()
         layoutShell()
-        showLaunchPlaceholder()
+        embedContentHost()
     }
 
     private func setupHeader() {
@@ -110,13 +114,6 @@ final class TabShellViewController: NSViewController {
     }
 
     private func setupContent() {
-        placeholderLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        placeholderLabel.textColor = NSColor(DBTTheme.text)
-        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        placeholderLabel.isEditable = false
-        placeholderLabel.isBordered = false
-        placeholderLabel.backgroundColor = .clear
-
         contentContainer.wantsLayer = true
         contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
     }
@@ -177,23 +174,6 @@ final class TabShellViewController: NSViewController {
         ])
     }
 
-    private func showLaunchPlaceholder() {
-        clearContent()
-        contentContainer.addSubview(placeholderLabel)
-        NSLayoutConstraint.activate([
-            placeholderLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            placeholderLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16)
-        ])
-    }
-
-    private func clearContent() {
-        contentContainer.subviews.forEach { $0.removeFromSuperview() }
-        children.forEach { child in
-            child.view.removeFromSuperview()
-            child.removeFromParent()
-        }
-    }
-
     private func makeTabButton(title: String, symbol: String, tab: AppTab) -> NSButton {
         let button = NSButton(title: title, target: self, action: #selector(tabSelected(_:)))
         button.tag = tab.tag
@@ -214,39 +194,13 @@ final class TabShellViewController: NSViewController {
 
     @objc private func tabSelected(_ sender: NSButton) {
         guard let tab = AppTab(tag: sender.tag) else { return }
-        selectedTab = tab
+        shellState.selectedTab = tab
         updateTabButtonStyles()
-        showLoadingPlaceholder(for: tab)
-
-        DispatchQueue.main.async {
-            self.attachContent(for: tab)
-        }
     }
 
-    private func showLoadingPlaceholder(for tab: AppTab) {
-        clearContent()
-        placeholderLabel.stringValue = "Loading \(tab.title) scaffold."
-        contentContainer.addSubview(placeholderLabel)
-        NSLayoutConstraint.activate([
-            placeholderLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            placeholderLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16)
-        ])
-    }
-
-    private func attachContent(for tab: AppTab) {
-        guard selectedTab == tab else { return }
-        if let host = contentHosts[tab] {
-            embed(host)
-            return
-        }
-
-        let host = NSHostingController(rootView: tab.rootView)
-        contentHosts[tab] = host
-        embed(host)
-    }
-
-    private func embed(_ host: NSHostingController<AnyView>) {
-        clearContent()
+    private func embedContentHost() {
+        let host = NSHostingController(rootView: TabContentHostView(shellState: shellState))
+        contentHost = host
         addChild(host)
         contentContainer.addSubview(host.view)
         host.view.translatesAutoresizingMaskIntoConstraints = false
@@ -261,11 +215,41 @@ final class TabShellViewController: NSViewController {
     private func updateTabButtonStyles() {
         for tab in tabs {
             guard let button = tabButtons[tab] else { continue }
-            let active = selectedTab == tab
+            let active = shellState.selectedTab == tab
             button.contentTintColor = active ? NSColor(DBTTheme.text) : NSColor(DBTTheme.muted)
             button.layer?.borderColor = active ? NSColor(DBTTheme.accent).cgColor : NSColor.clear.cgColor
             button.layer?.backgroundColor = active ? NSColor(DBTTheme.accent).withAlphaComponent(0.18).cgColor : NSColor.clear.cgColor
         }
+    }
+}
+
+private struct TabContentHostView: View {
+    @ObservedObject var shellState: ShellState
+
+    var body: some View {
+        Group {
+            switch shellState.selectedTab {
+            case .today:
+                TodayView()
+            case .diary:
+                DiaryView()
+            case .worksheets:
+                WorksheetsView()
+            case .resources:
+                ResourcesView()
+            case nil:
+                placeholder
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var placeholder: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Select a tab to open the scaffold.")
+                .foregroundStyle(DBTTheme.text)
+        }
+        .padding(16)
     }
 }
 
@@ -298,16 +282,4 @@ private extension AppTab {
         }
     }
 
-    var rootView: AnyView {
-        switch self {
-        case .today:
-            return AnyView(TodayView())
-        case .diary:
-            return AnyView(DiaryView())
-        case .worksheets:
-            return AnyView(WorksheetsView())
-        case .resources:
-            return AnyView(ResourcesView())
-        }
-    }
 }
