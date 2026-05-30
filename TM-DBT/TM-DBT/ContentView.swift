@@ -484,13 +484,17 @@ private struct WorksheetsView: View {
         NavigationStack {
             List {
                 Section("Use in order") {
-                    row("Daily Practice", detail: "Morning, midday, evening.")
+                    row("Daily Practice", detail: "Morning, midday, nighttime scaffold.")
                     row("Diary Card", detail: "Brief daily check-in.")
                     row("Chain Analysis", detail: "After a hard event.")
                     row("Weekly Review", detail: "Measure and adjust.")
                     row("DEAR Planner", detail: "One clear request.")
                     row("Opposite Action", detail: "When urge and goal conflict.")
                     row("Crisis Plan", detail: "Write before you need it.")
+                }
+
+                Section("Nightly endpoint") {
+                    Text("Night is complete when the diary card is done, the phone is down, and lights-out begins.")
                 }
 
                 Section("Printable source") {
