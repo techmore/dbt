@@ -1,28 +1,28 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab: AppTab? = nil
+    @State private var selectedTab: AppTab = .today
 
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                if let selectedTab {
-                    switch selectedTab {
-                    case .today:
-                        TodayView()
-                    case .diary:
-                        DiaryView()
-                    case .worksheets:
-                        WorksheetsView()
-                    case .resources:
-                        ResourcesView()
-                    }
-                } else {
-                    Color.clear
+                switch selectedTab {
+                case .today:
+                    TodayView()
+                case .diary:
+                    DiaryView()
+                case .worksheets:
+                    WorksheetsView()
+                case .resources:
+                    ResourcesView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             tabBar
+                .frame(maxWidth: .infinity)
+                .background(DBTTheme.surface2)
+                .overlay(Rectangle().frame(height: 1).foregroundStyle(DBTTheme.border), alignment: .top)
         }
         .background(DBTTheme.surface)
     }
@@ -36,8 +36,6 @@ struct ContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(DBTTheme.surface2)
-        .overlay(Rectangle().frame(height: 1).foregroundStyle(DBTTheme.border), alignment: .top)
     }
 
     private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
