@@ -63,7 +63,7 @@ struct ContentView: View {
     }
 }
 
-private struct TodayView: View {
+struct TodayView: View {
     @State private var showChainReview = false
 
     private let calendar = Calendar.current
@@ -410,7 +410,7 @@ private struct TodayView: View {
 
 }
 
-private struct WorksheetsView: View {
+struct WorksheetsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -463,7 +463,7 @@ private struct WorksheetsView: View {
     }
 }
 
-private struct ResourcesView: View {
+struct ResourcesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {

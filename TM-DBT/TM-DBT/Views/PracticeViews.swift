@@ -1,9 +1,8 @@
 import SwiftUI
-import SwiftData
 
 struct ChainReviewView: View {
-    @Environment(\.modelContext) private var modelContext
     @Binding var isPresented: Bool
+    @State private var store = PracticeStore.shared
 
     @State private var promptingEvent = ""
     @State private var vulnerabilityFactors = ""
@@ -32,7 +31,6 @@ struct ChainReviewView: View {
                 .font(.headline)
                 .padding(.top, 8)
         }
-        .modelContainer(PersistenceStore.shared.container)
     }
 
     private var topActions: some View {
@@ -48,7 +46,7 @@ struct ChainReviewView: View {
                     consequence: consequence,
                     nextTime: nextTime
                 )
-                modelContext.insert(review)
+                store.saveReview(review)
                 isPresented = false
             }
             .disabled(promptingEvent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -73,23 +71,13 @@ struct ChainReviewView: View {
 }
 
 struct DiaryView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var entries: [PracticeEntry]
-
+    @State private var store = PracticeStore.shared
+    @State private var entries: [PracticeEntry] = []
     @State private var emotion = "Overwhelmed"
     @State private var trigger = "Too much pressure + no break"
     @State private var response = "Did nothing / froze"
     @State private var notes = ""
     @State private var showReview = false
-
-    init() {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
-        _entries = Query(
-            filter: #Predicate<PracticeEntry> { $0.date >= cutoff },
-            sort: \PracticeEntry.date,
-            order: .reverse
-        )
-    }
 
     var body: some View {
         ScrollView {
@@ -118,7 +106,8 @@ struct DiaryView: View {
 
                 Button("Save check-in") {
                     let entry = PracticeEntry(emotion: emotion, trigger: trigger, response: response, notes: notes)
-                    modelContext.insert(entry)
+                    store.saveEntry(entry)
+                    entries = recentEntries()
                     notes = ""
                 }
 
@@ -149,7 +138,11 @@ struct DiaryView: View {
                 .font(.headline)
                 .padding(.top, 8)
         }
-        .modelContainer(PersistenceStore.shared.container)
+        .onAppear {
+            if entries.isEmpty {
+                entries = recentEntries()
+            }
+        }
     }
 
     private func sectionCard<Content: View>(
@@ -182,5 +175,12 @@ struct DiaryView: View {
             Text(title).font(.subheadline.weight(.semibold))
             Text(value).font(.body)
         }
+    }
+
+    private func recentEntries() -> [PracticeEntry] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
+        return store.loadEntries()
+            .filter { $0.date >= cutoff }
+            .sorted { $0.date > $1.date }
     }
 }
