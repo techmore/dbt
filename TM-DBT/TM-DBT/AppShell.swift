@@ -19,17 +19,17 @@ final class DBTWindowController: NSWindowController {
         let rootViewController = DBTRootViewController()
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1180, height: 820),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
-        window.title = "TM-DBT"
+        window.title = ""
         window.isReleasedWhenClosed = false
-        window.center()
+        window.isOpaque = true
+        window.hasShadow = false
+        window.level = .normal
         window.contentViewController = rootViewController
         window.backgroundColor = NSColor(DBTTheme.surface)
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
         super.init(window: window)
     }
 
