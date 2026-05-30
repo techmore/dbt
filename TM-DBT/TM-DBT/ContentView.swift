@@ -411,6 +411,7 @@ private struct DiaryView: View {
     @State private var trigger = "Too much pressure + no break"
     @State private var response = "Did nothing / froze"
     @State private var notes = ""
+    @State private var showReview = false
 
     var body: some View {
         NavigationStack {
@@ -452,20 +453,24 @@ private struct DiaryView: View {
                     }
                 }
 
-                Section("Optional review") {
-                    if let entry = entries.first {
-                        Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        LabeledContent("Emotion", value: entry.emotion)
-                        LabeledContent("Trigger", value: entry.trigger)
-                        LabeledContent("Response", value: entry.response)
-                        if !entry.notes.isEmpty {
-                            LabeledContent("Notes", value: entry.notes)
+                Section {
+                    DisclosureGroup(isExpanded: $showReview) {
+                        if let entry = entries.first {
+                            Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            LabeledContent("Emotion", value: entry.emotion)
+                            LabeledContent("Trigger", value: entry.trigger)
+                            LabeledContent("Response", value: entry.response)
+                            if !entry.notes.isEmpty {
+                                LabeledContent("Notes", value: entry.notes)
+                            }
+                        } else {
+                            Text("No diary card saved yet.")
+                                .foregroundStyle(.secondary)
                         }
-                    } else {
-                        Text("No diary card saved yet.")
-                            .foregroundStyle(.secondary)
+                    } label: {
+                        Text("Optional review")
                     }
                 }
             }
