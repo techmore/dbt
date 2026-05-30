@@ -67,7 +67,7 @@ private struct TodayView: View {
     }
 
     private var currentEntry: PracticeEntry {
-        todayEntry ?? entries.first ?? PracticeEntry()
+        todayEntry ?? PracticeEntry(date: Date())
     }
 
     private var completedBlocksToday: Int {
@@ -136,19 +136,6 @@ private struct TodayView: View {
         }
     }
 
-    private var nextActionTitle: String {
-        switch weekPhase {
-        case .earlyWeek:
-            return "Today’s next action"
-        case .midweek:
-            return "Today’s next action"
-        case .lateWeek:
-            return "Today’s next action"
-        case .weekend:
-            return "Today’s next action"
-        }
-    }
-
     private let morningSteps = [
         "Body check: notice what your body is doing right now",
         "10 to 20 minutes of mindfulness or meditation",
@@ -171,7 +158,8 @@ private struct TodayView: View {
         "No phone scrolling, new stimulus, or problem-solving during wind-down",
         "Use 5 to 10 minutes for mindfulness, meditation, or slow breathing",
         "Fill out the diary card",
-        "Use the selector sheet only if you cannot name what you feel"
+        "Use the selector sheet only if you cannot name what you feel",
+        "Night is complete when the diary card is done, the phone is down, and lights-out begins"
     ]
 
     var body: some View {
@@ -181,12 +169,10 @@ private struct TodayView: View {
                     header
                     howToUseCard
                     weekStatusCard
-                    nextActionCard
                     scaffoldCard(title: "Morning", subtitle: "Mindfulness / meditation, 10 to 20 minutes", steps: morningSteps, symbol: "sunrise.fill")
                     scaffoldCard(title: "Midday", subtitle: "Reset, 2 to 5 minutes", steps: middaySteps, symbol: "figure.walk")
                     scaffoldCard(title: "Nighttime", subtitle: "Wind-down starts 30 to 45 minutes before bed", steps: eveningSteps, symbol: "moon.stars.fill")
                     chainActionCard
-                    quickActions
                 }
                 .padding()
             }
@@ -264,22 +250,6 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
-    private var nextActionCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(nextActionTitle)
-                .font(.headline)
-            Text(todayPriority)
-                .font(.subheadline)
-                .foregroundStyle(DBTTheme.text)
-            Text(actionSuccessLine)
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
-        }
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
     private var chainActionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Chain analysis", systemImage: "arrow.triangle.branch")
@@ -302,19 +272,6 @@ private struct TodayView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         return formatter.string(from: Date())
-    }
-
-    private var actionSuccessLine: String {
-        switch weekPhase {
-        case .earlyWeek:
-            return "Success looks like starting clean and doing the first useful block."
-        case .midweek:
-            return "Success looks like staying with the plan instead of getting pulled around."
-        case .lateWeek:
-            return "Success looks like closing one gap before the week ends."
-        case .weekend:
-            return "Success looks like keeping one anchor habit alive."
-        }
     }
 
     private func statCard(_ label: String, value: String) -> some View {
@@ -369,28 +326,6 @@ private struct TodayView: View {
                         .foregroundStyle(DBTTheme.text)
                 }
             }
-        }
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private var quickActions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Quick actions", systemImage: "bolt.fill")
-                .font(.headline)
-            HStack(spacing: 12) {
-                Link("988", destination: URL(string: "https://988lifeline.org/")!)
-                Link("Diary card", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
-                Button("Review a hard moment") {
-                    showChainReview = true
-                }
-            }
-            .font(.subheadline.weight(.semibold))
-            .tint(DBTTheme.accent)
-            Text("Use these only when they match the moment. The app works best as a repeatable daily system, not as a place to browse.")
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
         }
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -517,7 +452,7 @@ private struct DiaryView: View {
                     }
                 }
 
-                Section("Most recent") {
+                Section("Optional review") {
                     if let entry = entries.first {
                         Text("Review is optional. Use this only to spot a pattern, not to re-live the day.")
                             .font(.footnote)
