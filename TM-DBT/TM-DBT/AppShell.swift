@@ -42,6 +42,7 @@ final class DBTWindowController: NSWindowController {
 
 final class ShellState: ObservableObject {
     @Published var selectedTab: AppTab?
+    @Published var renderedTab: AppTab?
 }
 
 final class TabShellViewController: NSViewController {
@@ -195,7 +196,11 @@ final class TabShellViewController: NSViewController {
     @objc private func tabSelected(_ sender: NSButton) {
         guard let tab = AppTab(tag: sender.tag) else { return }
         shellState.selectedTab = tab
+        shellState.renderedTab = nil
         updateTabButtonStyles()
+        DispatchQueue.main.async { [weak self] in
+            self?.shellState.renderedTab = tab
+        }
     }
 
     private func embedContentHost() {
@@ -228,7 +233,7 @@ private struct TabContentHostView: View {
 
     var body: some View {
         Group {
-            switch shellState.selectedTab {
+            switch shellState.renderedTab {
             case .today:
                 TodayView()
             case .diary:
