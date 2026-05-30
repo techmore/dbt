@@ -78,20 +78,9 @@ private enum DBTTheme {
 }
 
 private struct TodayView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var entries: [PracticeEntry]
     @State private var showChainReview = false
 
     private let calendar = Calendar.current
-
-    init() {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
-        _entries = Query(
-            filter: #Predicate<PracticeEntry> { $0.date >= cutoff },
-            sort: \PracticeEntry.date,
-            order: .reverse
-        )
-    }
 
     private enum WeekPhase: String {
         case earlyWeek = "Early week"
@@ -113,22 +102,6 @@ private struct TodayView: View {
                 return "Maintain structure and do not drop the routine."
             }
         }
-    }
-
-    private var completedBlocksToday: Int {
-        metrics.todayBlocks
-    }
-
-    private var weekSessionCount: Int {
-        metrics.weekSessionCount
-    }
-
-    private var currentStreak: Int {
-        metrics.currentStreak
-    }
-
-    private var currentEntry: PracticeEntry? {
-        metrics.todayEntry
     }
 
     private var weekPhase: WeekPhase {
@@ -202,21 +175,6 @@ private struct TodayView: View {
         }
     }
 
-    private var isOnTrack: Bool {
-        let todayBlocks = completedBlocksToday
-        let activeDays = weekSessionCount
-        switch weekPhase {
-        case .earlyWeek:
-            return activeDays >= 1 || todayBlocks >= 1
-        case .midweek:
-            return activeDays >= 3 || todayBlocks >= 2
-        case .lateWeek:
-            return activeDays >= 4 || currentStreak >= 2 || todayBlocks >= 2
-        case .weekend:
-            return todayBlocks >= 1 || currentStreak >= 3
-        }
-    }
-
     private var todayPriority: String {
         switch weekPhase {
         case .earlyWeek:
@@ -245,10 +203,6 @@ private struct TodayView: View {
         case .windDown:
             return hourlyScaffold[5]
         }
-    }
-
-    private var metrics: SummaryMetrics {
-        SummaryMetrics(entries: entries, calendar: calendar)
     }
 
     private var nextBlock: (title: String, subtitle: String, steps: [String], symbol: String) {
@@ -341,7 +295,6 @@ private struct TodayView: View {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     header
                     howToUseCard
-                    weekStatusCard
                     currentBlockCard
                     nextBlockCard
                     hourlyScaffoldSection
@@ -380,35 +333,6 @@ private struct TodayView: View {
             Text("If you feel lost, follow the hour groups in order: wake, 2 hours, 4 hours, 6 hours, evening.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
-        }
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private var weekStatusCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(dayLabel)
-                        .font(.caption.weight(.semibold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(DBTTheme.muted)
-                    Text(weekPhase.title)
-                        .font(.headline)
-                        .foregroundStyle(DBTTheme.text)
-                }
-                Spacer()
-                Text(isOnTrack ? "On track" : "Needs focus")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isOnTrack ? DBTTheme.accent : .red)
-            }
-            Text(weekPhase.guidance)
-                .font(.subheadline)
-                .foregroundStyle(DBTTheme.text)
-            Text("On track means you completed at least one useful block for this phase, not that the day was perfect.")
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
         }
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -478,51 +402,6 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
-    private var dayLabel: String {
-        Self.dayFormatter.string(from: Date())
-    }
-
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter
-    }()
-
-    private func statCard(_ label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(DBTTheme.muted)
-            Text(value)
-                .font(.title2.bold())
-                .foregroundStyle(DBTTheme.text)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private func binding(_ keyPath: ReferenceWritableKeyPath<PracticeEntry, Bool>) -> Binding<Bool> {
-        Binding(
-            get: { currentEntry?[keyPath: keyPath] ?? false },
-            set: { newValue in
-                let entry = ensureTodayEntry()
-                entry[keyPath: keyPath] = newValue
-            }
-        )
-    }
-
-    private func ensureTodayEntry() -> PracticeEntry {
-        if let currentEntry {
-            return currentEntry
-        }
-        let entry = PracticeEntry(date: Date())
-        modelContext.insert(entry)
-        return entry
-    }
-
     private func scaffoldCard(title: String, subtitle: String, steps: [String], symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -544,72 +423,6 @@ private struct TodayView: View {
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private struct SummaryMetrics {
-        let todayEntry: PracticeEntry?
-        let todayBlocks: Int
-        let weekSessionCount: Int
-        let currentStreak: Int
-
-        init(entries: [PracticeEntry], calendar: Calendar) {
-            let now = Date()
-            let today = calendar.startOfDay(for: now)
-            let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? .distantPast
-
-            var foundToday: PracticeEntry?
-            var weekCount = 0
-
-            for entry in entries {
-                if entry.date >= weekStart,
-                   [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
-                    weekCount += 1
-                }
-
-                if foundToday == nil, calendar.isDateInToday(entry.date) {
-                    foundToday = entry
-                }
-            }
-
-            let todayBlocks = foundToday.map {
-                [$0.morningDone, $0.middayDone, $0.eveningDone, $0.sleepDone].filter { $0 }.count
-            } ?? 0
-
-            var streak = 0
-            var expectedDay = today
-            var index = 0
-
-            while index < entries.count {
-                let entry = entries[index]
-                let entryDay = calendar.startOfDay(for: entry.date)
-
-                if entryDay > expectedDay {
-                    index += 1
-                    continue
-                }
-
-                if entryDay < expectedDay {
-                    break
-                }
-
-                if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
-                    streak += 1
-                    guard let previous = calendar.date(byAdding: .day, value: -1, to: expectedDay) else { break }
-                    expectedDay = previous
-                } else {
-                    break
-                }
-
-                while index < entries.count, calendar.isDate(entries[index].date, inSameDayAs: entryDay) {
-                    index += 1
-                }
-            }
-
-            self.todayEntry = foundToday
-            self.todayBlocks = todayBlocks
-            self.weekSessionCount = weekCount
-            self.currentStreak = streak
-        }
     }
 
 }
