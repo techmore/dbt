@@ -10,7 +10,17 @@ import SwiftData
 
 @main
 struct TM_DBTApp: App {
-    var sharedModelContainer: ModelContainer = {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+
+final class PersistenceStore {
+    static let shared = PersistenceStore()
+
+    lazy var container: ModelContainer = {
         let schema = Schema([
             PracticeEntry.self,
             ChainReview.self,
@@ -23,11 +33,4 @@ struct TM_DBTApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .modelContainer(sharedModelContainer)
-    }
 }

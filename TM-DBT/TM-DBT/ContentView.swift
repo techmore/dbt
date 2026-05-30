@@ -12,6 +12,7 @@ struct ContentView: View {
                     TodayView()
                 case .diary:
                     DiaryView()
+                        .modelContainer(PersistenceStore.shared.container)
                 case .worksheets:
                     WorksheetsView()
                 case .resources:
@@ -304,6 +305,7 @@ private struct TodayView: View {
         .background(DBTTheme.surface)
         .sheet(isPresented: $showChainReview) {
             ChainReviewView(isPresented: $showChainReview)
+                .modelContainer(PersistenceStore.shared.container)
         }
     }
 
