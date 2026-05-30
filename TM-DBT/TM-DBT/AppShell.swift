@@ -55,7 +55,10 @@ final class DBTRootViewController: NSViewController {
         super.viewDidLoad()
         configureHeader()
         configureContentContainer()
-        updateContent(for: .today)
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
     }
 
     private func configureHeader() {
