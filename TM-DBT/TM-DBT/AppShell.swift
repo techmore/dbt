@@ -44,6 +44,7 @@ final class DBTRootViewController: NSViewController {
     private let segmentedControl = NSSegmentedControl(labels: ["Today", "Diary", "Worksheets", "Resources"], trackingMode: .selectOne, target: nil, action: nil)
     private let contentContainer = NSView()
     private var currentHost: NSViewController?
+    private var hostCache: [AppTab: NSViewController] = [:]
     private var selectedTab: AppTab = .today
     private let loadingLabel = NSTextField(labelWithString: "Ready")
     private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
@@ -162,35 +163,46 @@ final class DBTRootViewController: NSViewController {
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            let host = NSHostingController(rootView: self.rootView(for: tab))
-            self.addChild(host)
-            host.view.translatesAutoresizingMaskIntoConstraints = false
-            self.contentContainer.addSubview(host.view)
-
-            NSLayoutConstraint.activate([
-                host.view.topAnchor.constraint(equalTo: self.contentContainer.topAnchor),
-                host.view.leadingAnchor.constraint(equalTo: self.contentContainer.leadingAnchor),
-                host.view.trailingAnchor.constraint(equalTo: self.contentContainer.trailingAnchor),
-                host.view.bottomAnchor.constraint(equalTo: self.contentContainer.bottomAnchor)
-            ])
-
+            let host = self.host(for: tab)
+            self.attach(host)
             self.loadingLabel.stringValue = "Ready"
             self.currentHost = host
             self.logger.info("tab_host_built tab=\(self.tabName(tab), privacy: .public) duration_ms=\(Int((CACurrentMediaTime() - start) * 1000), privacy: .public)")
         }
     }
 
-    private func rootView(for tab: AppTab) -> AnyView {
+    private func host(for tab: AppTab) -> NSViewController {
+        if let cached = hostCache[tab] {
+            return cached
+        }
+        let host: NSViewController
         switch tab {
         case .today:
-            AnyView(TodayView())
+            host = NSHostingController(rootView: TodayView())
         case .diary:
-            AnyView(DiaryView())
+            host = NSHostingController(rootView: DiaryView())
         case .worksheets:
-            AnyView(WorksheetsView())
+            host = NSHostingController(rootView: WorksheetsView())
         case .resources:
-            AnyView(ResourcesView())
+            host = NSHostingController(rootView: ResourcesView())
         }
+        hostCache[tab] = host
+        return host
+    }
+
+    private func attach(_ host: NSViewController) {
+        host.view.removeFromSuperview()
+        host.removeFromParent()
+        addChild(host)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(host.view)
+
+        NSLayoutConstraint.activate([
+            host.view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            host.view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+        ])
     }
 
     private func tabName(_ tab: AppTab) -> String {
