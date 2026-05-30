@@ -1,5 +1,4 @@
 import AppKit
-import Combine
 import SwiftUI
 
 @main
@@ -40,14 +39,10 @@ final class DBTWindowController: NSWindowController {
     }
 }
 
-final class ShellState: ObservableObject {
-    @Published var selectedTab: AppTab?
-    @Published var renderedTab: AppTab?
-}
-
 final class TabShellViewController: NSViewController {
     private let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
-    private let shellState = ShellState()
+    private var selectedTab: AppTab?
+    private var renderedTab: AppTab?
 
     private let headerView = NSView()
     private let contentContainer = NSView()
@@ -203,19 +198,21 @@ final class TabShellViewController: NSViewController {
 
     @objc private func tabSelected(_ sender: NSButton) {
         guard let tab = AppTab(tag: sender.tag) else { return }
-        shellState.selectedTab = tab
-        shellState.renderedTab = nil
+        selectedTab = tab
+        renderedTab = nil
         updateTabButtonStyles()
         if contentHost == nil {
             embedContentHost()
         }
         DispatchQueue.main.async { [weak self] in
-            self?.shellState.renderedTab = tab
+            self?.renderedTab = tab
+            self?.updateTabButtonStyles()
+            self?.contentHost?.rootView = TabContentHostView(renderedTab: tab)
         }
     }
 
     private func embedContentHost() {
-        let host = NSHostingController(rootView: TabContentHostView(shellState: shellState))
+        let host = NSHostingController(rootView: TabContentHostView(renderedTab: nil))
         contentHost = host
         addChild(host)
         contentContainer.subviews.forEach { $0.removeFromSuperview() }
@@ -232,7 +229,7 @@ final class TabShellViewController: NSViewController {
     private func updateTabButtonStyles() {
         for tab in tabs {
             guard let button = tabButtons[tab] else { continue }
-            let active = shellState.selectedTab == tab
+            let active = selectedTab == tab
             button.contentTintColor = active ? NSColor(DBTTheme.text) : NSColor(DBTTheme.muted)
             button.layer?.borderColor = active ? NSColor(DBTTheme.accent).cgColor : NSColor.clear.cgColor
             button.layer?.backgroundColor = active ? NSColor(DBTTheme.accent).withAlphaComponent(0.18).cgColor : NSColor.clear.cgColor
@@ -241,11 +238,11 @@ final class TabShellViewController: NSViewController {
 }
 
 private struct TabContentHostView: View {
-    @ObservedObject var shellState: ShellState
+    var renderedTab: AppTab?
 
     var body: some View {
         Group {
-            switch shellState.renderedTab {
+            switch renderedTab {
             case .today:
                 TodayView()
             case .diary:
