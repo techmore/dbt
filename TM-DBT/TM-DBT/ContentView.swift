@@ -3,13 +3,20 @@ import SwiftData
 
 struct ContentView: View {
     @State private var selectedTab: AppTab = .today
+    @State private var todayReady = false
 
     var body: some View {
         VStack(spacing: 0) {
             Group {
                 switch selectedTab {
                 case .today:
-                    TodayView()
+                    if todayReady {
+                        TodayView()
+                    } else {
+                        TodayLoadingView {
+                            todayReady = true
+                        }
+                    }
                 case .diary:
                     DiaryView()
                         .modelContainer(PersistenceStore.shared.container)
@@ -24,6 +31,12 @@ struct ContentView: View {
             tabBar
         }
         .background(DBTTheme.surface)
+        .onAppear {
+            guard !todayReady else { return }
+            DispatchQueue.main.async {
+                todayReady = true
+            }
+        }
     }
 
     private var tabBar: some View {
@@ -61,6 +74,29 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+    }
+}
+
+private struct TodayLoadingView: View {
+    let onReady: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("DBT Today")
+                .font(.headline)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Loading the daily scaffold...")
+                .font(.title2.bold())
+                .foregroundStyle(DBTTheme.text)
+            Text("The app will become interactive immediately; the full scaffold follows right after the first frame.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.muted)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
+        .task {
+            onReady()
+        }
     }
 }
 
