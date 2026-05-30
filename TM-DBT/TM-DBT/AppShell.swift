@@ -2,6 +2,26 @@ import AppKit
 import SwiftUI
 import os.log
 
+enum StartupTrace {
+    static let fileURL = URL(fileURLWithPath: "/tmp/TM-DBT-startup.log")
+
+    static func write(_ line: String) {
+        do {
+            let data = "\(line)\n".data(using: .utf8) ?? Data()
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                let handle = try FileHandle(forWritingTo: fileURL)
+                try handle.seekToEnd()
+                try handle.write(contentsOf: data)
+                try handle.close()
+            } else {
+                try data.write(to: fileURL, options: [.atomic])
+            }
+        } catch {
+            print("startup_trace_write_failed \(error)")
+        }
+    }
+}
+
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: DBTWindowController?
@@ -60,10 +80,7 @@ final class DBTRootViewController: NSViewController {
         configureHeader()
         configureContentContainer()
         showPlaceholder()
-    }
-
-    override func viewDidAppear() {
-        super.viewDidAppear()
+        scheduleHostPrewarm()
     }
 
     private func configureHeader() {
@@ -138,6 +155,21 @@ final class DBTRootViewController: NSViewController {
         loadingLabel.stringValue = "Ready"
     }
 
+    private func scheduleHostPrewarm() {
+        let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
+        for (index, tab) in tabs.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(900 + (120 * index))) { [weak self] in
+                guard let self else { return }
+                guard self.hostCache[tab] == nil else { return }
+                let start = CACurrentMediaTime()
+                _ = self.host(for: tab)
+                let duration = Int((CACurrentMediaTime() - start) * 1000)
+                StartupTrace.write("tab_host_prewarm tab=\(self.tabName(tab)) duration_ms=\(duration)")
+                self.logger.info("tab_host_prewarm tab=\(self.tabName(tab), privacy: .public) duration_ms=\(duration, privacy: .public)")
+            }
+        }
+    }
+
     @objc private func tabChanged(_ sender: NSSegmentedControl) {
         let newTab: AppTab
         switch sender.selectedSegment {
@@ -156,18 +188,18 @@ final class DBTRootViewController: NSViewController {
         let start = CACurrentMediaTime()
         self.logger.info("tab_content_update_start tab=\(self.tabName(tab), privacy: .public)")
 
-        currentHost?.view.removeFromSuperview()
-        currentHost?.removeFromParent()
-
         loadingLabel.stringValue = "Loading..."
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             let host = self.host(for: tab)
-            self.attach(host)
+            self.ensureAttached(host)
+            self.hideAllHosts(except: host)
             self.loadingLabel.stringValue = "Ready"
             self.currentHost = host
-            self.logger.info("tab_host_built tab=\(self.tabName(tab), privacy: .public) duration_ms=\(Int((CACurrentMediaTime() - start) * 1000), privacy: .public)")
+            let duration = Int((CACurrentMediaTime() - start) * 1000)
+            StartupTrace.write("tab_host_built tab=\(self.tabName(tab)) duration_ms=\(duration)")
+            self.logger.info("tab_host_built tab=\(self.tabName(tab), privacy: .public) duration_ms=\(duration, privacy: .public)")
         }
     }
 
@@ -190,11 +222,11 @@ final class DBTRootViewController: NSViewController {
         return host
     }
 
-    private func attach(_ host: NSViewController) {
-        host.view.removeFromSuperview()
-        host.removeFromParent()
+    private func ensureAttached(_ host: NSViewController) {
+        guard host.view.superview == nil else { return }
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false
+        host.view.isHidden = true
         contentContainer.addSubview(host.view)
 
         NSLayoutConstraint.activate([
@@ -203,6 +235,12 @@ final class DBTRootViewController: NSViewController {
             host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
             host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
         ])
+    }
+
+    private func hideAllHosts(except visibleHost: NSViewController) {
+        for host in hostCache.values {
+            host.view.isHidden = host !== visibleHost
+        }
     }
 
     private func tabName(_ tab: AppTab) -> String {
