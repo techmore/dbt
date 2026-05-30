@@ -46,6 +46,7 @@ final class DBTWindowController: NSWindowController {
 
 struct ShellRootView: View {
     @StateObject private var state = AppShellState()
+    @State private var todayReady = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +55,12 @@ struct ShellRootView: View {
             tabBar
         }
         .background(DBTTheme.surface)
+        .onAppear {
+            guard !todayReady else { return }
+            DispatchQueue.main.async {
+                todayReady = true
+            }
+        }
     }
 
     private var header: some View {
@@ -80,7 +87,11 @@ struct ShellRootView: View {
         Group {
             switch state.selectedTab {
             case .today:
-                TodayView()
+                if todayReady {
+                    TodayView()
+                } else {
+                    todayPlaceholder
+                }
             case .diary:
                 DiaryView()
             case .worksheets:
@@ -90,6 +101,20 @@ struct ShellRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var todayPlaceholder: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Today")
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Loading the daily scaffold.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
     }
 
     private var tabBar: some View {
