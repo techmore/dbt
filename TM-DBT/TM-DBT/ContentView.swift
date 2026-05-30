@@ -105,6 +105,64 @@ private struct TodayView: View {
         }
     }
 
+    private var currentHour: Int {
+        calendar.component(.hour, from: Date())
+    }
+
+    private enum TimeBlock: CaseIterable {
+        case wake, twoHours, fourHours, sixHours, eightHours, windDown
+
+        var title: String {
+            switch self {
+            case .wake: return "Wake"
+            case .twoHours: return "2 hours after waking"
+            case .fourHours: return "4 hours after waking"
+            case .sixHours: return "6 hours after waking"
+            case .eightHours: return "8 hours before bed"
+            case .windDown: return "30 to 45 minutes before bed"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .wake: return "First 15 minutes"
+            case .twoHours: return "First work block"
+            case .fourHours: return "Reset block"
+            case .sixHours: return "Midday review"
+            case .eightHours: return "Close the day"
+            case .windDown: return "Wind-down"
+            }
+        }
+    }
+
+    private var currentTimeBlock: TimeBlock {
+        switch currentHour {
+        case 5...8:
+            return .wake
+        case 9...11:
+            return .twoHours
+        case 12...14:
+            return .fourHours
+        case 15...17:
+            return .sixHours
+        case 18...20:
+            return .eightHours
+        default:
+            return .windDown
+        }
+    }
+
+    private var nextTimeBlock: TimeBlock {
+        switch currentTimeBlock {
+        case .wake: return .twoHours
+        case .twoHours: return .fourHours
+        case .fourHours: return .sixHours
+        case .sixHours: return .eightHours
+        case .eightHours: return .windDown
+        case .windDown: return .wake
+        }
+    }
+
     private var isOnTrack: Bool {
         let todayBlocks = completedBlocksToday
         let activeDays = weekSessionCount
@@ -130,6 +188,40 @@ private struct TodayView: View {
             return "Close gaps, finish one block, and prepare the week review."
         case .weekend:
             return "Keep one anchor block alive so the routine does not collapse."
+        }
+    }
+
+    private var currentBlock: (title: String, subtitle: String, steps: [String], symbol: String) {
+        switch currentTimeBlock {
+        case .wake:
+            return hourlyScaffold[0]
+        case .twoHours:
+            return hourlyScaffold[1]
+        case .fourHours:
+            return hourlyScaffold[2]
+        case .sixHours:
+            return hourlyScaffold[3]
+        case .eightHours:
+            return hourlyScaffold[4]
+        case .windDown:
+            return hourlyScaffold[5]
+        }
+    }
+
+    private var nextBlock: (title: String, subtitle: String, steps: [String], symbol: String) {
+        switch nextTimeBlock {
+        case .wake:
+            return hourlyScaffold[0]
+        case .twoHours:
+            return hourlyScaffold[1]
+        case .fourHours:
+            return hourlyScaffold[2]
+        case .sixHours:
+            return hourlyScaffold[3]
+        case .eightHours:
+            return hourlyScaffold[4]
+        case .windDown:
+            return hourlyScaffold[5]
         }
     }
 
@@ -207,6 +299,8 @@ private struct TodayView: View {
                     header
                     howToUseCard
                     weekStatusCard
+                    currentBlockCard
+                    nextBlockCard
                     hourlyScaffoldSection
                     chainActionCard
                 }
@@ -288,17 +382,47 @@ private struct TodayView: View {
     }
 
     private var hourlyScaffoldSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Hourly scaffold")
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(hourlyScaffold.enumerated()), id: \.offset) { _, block in
+                    scaffoldCard(title: block.title, subtitle: block.subtitle, steps: block.steps, symbol: block.symbol)
+                }
+            }
+            .padding(.top, 8)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Full scaffold")
+                    .font(.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(DBTTheme.muted)
+                Text("Open this if you want the whole day mapped out.")
+                    .font(.subheadline)
+                    .foregroundStyle(DBTTheme.text)
+            }
+        }
+    }
+
+    private var currentBlockCard: some View {
+        scaffoldCard(
+            title: "Now",
+            subtitle: "\(currentBlock.title) - \(currentBlock.subtitle)",
+            steps: currentBlock.steps,
+            symbol: currentBlock.symbol
+        )
+    }
+
+    private var nextBlockCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Next up")
                 .font(.headline)
                 .textCase(.uppercase)
                 .foregroundStyle(DBTTheme.muted)
-            Text("Use the next time block if you feel lost.")
-                .font(.subheadline)
-                .foregroundStyle(DBTTheme.text)
-            ForEach(Array(hourlyScaffold.enumerated()), id: \.offset) { _, block in
-                scaffoldCard(title: block.title, subtitle: block.subtitle, steps: block.steps, symbol: block.symbol)
-            }
+            scaffoldCard(
+                title: nextBlock.title,
+                subtitle: nextBlock.subtitle,
+                steps: Array(nextBlock.steps.prefix(2)),
+                symbol: nextBlock.symbol
+            )
         }
     }
 
