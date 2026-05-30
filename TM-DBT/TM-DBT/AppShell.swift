@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import os.log
 
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
@@ -44,7 +45,8 @@ final class DBTRootViewController: NSViewController {
     private let contentContainer = NSView()
     private var currentHost: NSViewController?
     private var selectedTab: AppTab = .today
-    private let host = NSHostingController(rootView: AnyView(TodayView()))
+    private let loadingLabel = NSTextField(labelWithString: "Ready")
+    private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
 
     override func loadView() {
         view = NSView()
@@ -56,7 +58,7 @@ final class DBTRootViewController: NSViewController {
         super.viewDidLoad()
         configureHeader()
         configureContentContainer()
-        attachHost()
+        showPlaceholder()
     }
 
     override func viewDidAppear() {
@@ -112,7 +114,11 @@ final class DBTRootViewController: NSViewController {
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.wantsLayer = true
         contentContainer.layer?.backgroundColor = NSColor(DBTTheme.surface).cgColor
+        loadingLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        loadingLabel.textColor = .secondaryLabelColor
+        loadingLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(contentContainer)
+        contentContainer.addSubview(loadingLabel)
 
         NSLayoutConstraint.activate([
             contentContainer.topAnchor.constraint(equalTo: view.topAnchor, constant: 72),
@@ -120,21 +126,15 @@ final class DBTRootViewController: NSViewController {
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-    }
-
-    private func attachHost() {
-        addChild(host)
-        host.view.translatesAutoresizingMaskIntoConstraints = false
-        contentContainer.addSubview(host.view)
 
         NSLayoutConstraint.activate([
-            host.view.topAnchor.constraint(equalTo: contentContainer.topAnchor),
-            host.view.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
-            host.view.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
-            host.view.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+            loadingLabel.centerXAnchor.constraint(equalTo: contentContainer.centerXAnchor),
+            loadingLabel.centerYAnchor.constraint(equalTo: contentContainer.centerYAnchor)
         ])
+    }
 
-        currentHost = host
+    private func showPlaceholder() {
+        loadingLabel.stringValue = "Ready"
     }
 
     @objc private func tabChanged(_ sender: NSSegmentedControl) {
@@ -145,14 +145,39 @@ final class DBTRootViewController: NSViewController {
         case 2: newTab = .worksheets
         default: newTab = .resources
         }
+        self.logger.info("tab_selected tab=\(self.tabName(newTab), privacy: .public)")
         updateContent(for: newTab)
     }
 
     private func updateContent(for tab: AppTab) {
         guard tab != selectedTab || currentHost == nil else { return }
         selectedTab = tab
+        let start = CACurrentMediaTime()
+        self.logger.info("tab_content_update_start tab=\(self.tabName(tab), privacy: .public)")
 
-        host.rootView = rootView(for: tab)
+        currentHost?.view.removeFromSuperview()
+        currentHost?.removeFromParent()
+
+        loadingLabel.stringValue = "Loading..."
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let host = NSHostingController(rootView: self.rootView(for: tab))
+            self.addChild(host)
+            host.view.translatesAutoresizingMaskIntoConstraints = false
+            self.contentContainer.addSubview(host.view)
+
+            NSLayoutConstraint.activate([
+                host.view.topAnchor.constraint(equalTo: self.contentContainer.topAnchor),
+                host.view.leadingAnchor.constraint(equalTo: self.contentContainer.leadingAnchor),
+                host.view.trailingAnchor.constraint(equalTo: self.contentContainer.trailingAnchor),
+                host.view.bottomAnchor.constraint(equalTo: self.contentContainer.bottomAnchor)
+            ])
+
+            self.loadingLabel.stringValue = "Ready"
+            self.currentHost = host
+            self.logger.info("tab_host_built tab=\(self.tabName(tab), privacy: .public) duration_ms=\(Int((CACurrentMediaTime() - start) * 1000), privacy: .public)")
+        }
     }
 
     private func rootView(for tab: AppTab) -> AnyView {
@@ -165,6 +190,15 @@ final class DBTRootViewController: NSViewController {
             AnyView(WorksheetsView())
         case .resources:
             AnyView(ResourcesView())
+        }
+    }
+
+    private func tabName(_ tab: AppTab) -> String {
+        switch tab {
+        case .today: return "today"
+        case .diary: return "diary"
+        case .worksheets: return "worksheets"
+        case .resources: return "resources"
         }
     }
 }

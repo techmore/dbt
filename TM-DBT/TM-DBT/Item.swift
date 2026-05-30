@@ -49,7 +49,7 @@ final class PracticeStore {
 
     func loadEntriesAsync(completion: @escaping ([PracticeEntry]) -> Void) {
         queue.async {
-            completion(self.read([PracticeEntry].self, from: self.entriesURL))
+            completion(self.readDirect([PracticeEntry].self, from: self.entriesURL))
         }
     }
 
@@ -69,7 +69,7 @@ final class PracticeStore {
 
     func loadReviewsAsync(completion: @escaping ([ChainReview]) -> Void) {
         queue.async {
-            completion(self.read([ChainReview].self, from: self.reviewsURL))
+            completion(self.readDirect([ChainReview].self, from: self.reviewsURL))
         }
     }
 
@@ -81,12 +81,16 @@ final class PracticeStore {
 
     private func read<T: Decodable>(_ type: T.Type, from url: URL) -> T {
         queue.sync {
-            do {
-                let data = try Data(contentsOf: url)
-                return try decoder.decode(T.self, from: data)
-            } catch {
-                return defaultValue(for: T.self)
-            }
+            readDirect(type, from: url)
+        }
+    }
+
+    private func readDirect<T: Decodable>(_ type: T.Type, from url: URL) -> T {
+        do {
+            let data = try Data(contentsOf: url)
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            return defaultValue(for: T.self)
         }
     }
 
