@@ -19,15 +19,66 @@ struct ContentView: View {
             SupportView()
                 .tabItem { Label("Support", systemImage: "phone.fill") }
         }
+        .tint(DBTTheme.accent)
     }
+}
+
+private enum DBTTheme {
+    static let accent = Color(red: 0.36, green: 0.40, blue: 0.27)
+    static let accentSoft = Color(red: 0.55, green: 0.58, blue: 0.43)
+    static let surface = Color(red: 0.96, green: 0.96, blue: 0.93)
+    static let surface2 = Color(red: 0.91, green: 0.92, blue: 0.86)
+    static let border = Color(red: 0.68, green: 0.70, blue: 0.57)
+    static let text = Color(red: 0.17, green: 0.16, blue: 0.14)
+    static let muted = Color(red: 0.43, green: 0.41, blue: 0.38)
 }
 
 private struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PracticeEntry.date, order: .reverse) private var entries: [PracticeEntry]
 
-    @State private var currentEntry: PracticeEntry?
-    @State private var sleepGoal = "8.5 hours"
+    private let calendar = Calendar.current
+
+    private var todayEntry: PracticeEntry? {
+        entries.first(where: { calendar.isDateInToday($0.date) })
+    }
+
+    private var currentEntry: PracticeEntry {
+        todayEntry ?? entries.first ?? PracticeEntry()
+    }
+
+    private var completedBlocksToday: Int {
+        [currentEntry.morningDone, currentEntry.middayDone, currentEntry.eveningDone, currentEntry.sleepDone].filter { $0 }.count
+    }
+
+    private var weekSessionCount: Int {
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        return entries.filter { entry in
+            calendar.isDate(entry.date, equalTo: weekStart, toGranularity: .weekOfYear)
+                && [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true)
+        }.count
+    }
+
+    private var weekBlockCount: Int {
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        return entries
+            .filter { calendar.isDate($0.date, equalTo: weekStart, toGranularity: .weekOfYear) }
+            .map { [$0.morningDone, $0.middayDone, $0.eveningDone, $0.sleepDone].filter { $0 }.count }
+            .reduce(0, +)
+    }
+
+    private var currentStreak: Int {
+        let dayEntries = Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
+        var streak = 0
+        var cursor = calendar.startOfDay(for: Date())
+        while let entry = dayEntries[cursor]?.first,
+              [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
+            streak += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return streak
+    }
 
     private let morningSteps = [
         "Body check: jaw, shoulders, breathing, hands, stomach, feet",
@@ -54,25 +105,31 @@ private struct TodayView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    summaryCard
                     sleepCard
+                    checklistCard
                     routineCard(title: "Morning", subtitle: "7 to 12 minutes", steps: morningSteps, symbol: "sunrise.fill")
                     routineCard(title: "Midday", subtitle: "8 to 12 minutes", steps: middaySteps, symbol: "figure.walk")
                     routineCard(title: "Evening", subtitle: "8 to 15 minutes", steps: eveningSteps, symbol: "moon.stars.fill")
                     quickActions
-                    if let entry = currentEntry ?? entries.first {
+                    if let entry = todayEntry ?? entries.first {
                         latestCheckIn(entry)
                     }
                 }
                 .padding()
             }
-            .background(appBackground)
+            .background(DBTTheme.surface.opacity(0.5))
             .navigationTitle("DBT Today")
             .onAppear {
-                if currentEntry == nil {
-                    currentEntry = entries.first ?? PracticeEntry()
-                }
+                seedTodayIfNeeded()
             }
         }
+    }
+
+    private func seedTodayIfNeeded() {
+        guard todayEntry == nil else { return }
+        let entry = PracticeEntry(date: Date())
+        modelContext.insert(entry)
     }
 
     private var header: some View {
@@ -80,10 +137,40 @@ private struct TodayView: View {
             Text("Daily scaffolding")
                 .font(.headline)
                 .textCase(.uppercase)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DBTTheme.muted)
             Text("Start small. Do one useful block. Record what happened.")
                 .font(.title2.bold())
+                .foregroundStyle(DBTTheme.text)
         }
+    }
+
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                statCard("Today", value: "\(completedBlocksToday)/4")
+                statCard("Week", value: "\(weekBlockCount)")
+                statCard("Streak", value: "\(currentStreak)")
+            }
+            Text("Week days with any block: \(weekSessionCount). Good progress means repeatable practice, not perfect days.")
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
+        }
+    }
+
+    private func statCard(_ label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(DBTTheme.muted)
+            Text(value)
+                .font(.title2.bold())
+                .foregroundStyle(DBTTheme.text)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
     private var sleepCard: some View {
@@ -92,12 +179,13 @@ private struct TodayView: View {
                 Label("Sleep reset", systemImage: "bed.double.fill")
                     .font(.headline)
                 Spacer()
-                Text(sleepGoal)
+                Text("8.5 hours")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DBTTheme.muted)
             }
             Text("Bedtime goal: 9:30 pm. Wind-down begins around 8:45 to 9:00 pm. The goal is to lower stimulation, not to get more work done.")
                 .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
             VStack(alignment: .leading, spacing: 8) {
                 sleepLine("Finish the last meaningful task")
                 sleepLine("Stop phone scrolling")
@@ -106,12 +194,50 @@ private struct TodayView: View {
             }
         }
         .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
     private func sleepLine(_ text: String) -> some View {
         Label(text, systemImage: "checkmark.circle")
             .font(.subheadline)
+            .foregroundStyle(DBTTheme.text)
+    }
+
+    private var checklistCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Today checklist", systemImage: "checklist")
+                .font(.headline)
+            Toggle("Morning block done", isOn: binding(\PracticeEntry.morningDone))
+            Toggle("Midday block done", isOn: binding(\PracticeEntry.middayDone))
+            Toggle("Evening block done", isOn: binding(\PracticeEntry.eveningDone))
+            Toggle("Sleep reset done", isOn: binding(\PracticeEntry.sleepDone))
+            Text("Success looks like doing the smallest useful block on purpose, then marking it. A good week is five days with at least one completed block.")
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
+        }
+        .padding()
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private func binding(_ keyPath: ReferenceWritableKeyPath<PracticeEntry, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { currentEntry[keyPath: keyPath] },
+            set: { newValue in
+                let entry = ensureTodayEntry()
+                entry[keyPath: keyPath] = newValue
+            }
+        )
+    }
+
+    private func ensureTodayEntry() -> PracticeEntry {
+        if let todayEntry {
+            return todayEntry
+        }
+        let entry = PracticeEntry(date: Date())
+        modelContext.insert(entry)
+        return entry
     }
 
     private func routineCard(title: String, subtitle: String, steps: [String], symbol: String) -> some View {
@@ -122,17 +248,19 @@ private struct TodayView: View {
                 Spacer()
                 Text(subtitle)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DBTTheme.muted)
             }
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(steps, id: \.self) { step in
                     Text("• \(step)")
                         .font(.subheadline)
+                        .foregroundStyle(DBTTheme.text)
                 }
             }
         }
         .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
     private var quickActions: some View {
@@ -145,9 +273,14 @@ private struct TodayView: View {
                 Link("Worksheets", destination: URL(string: "https://techmore.github.io/dbt/worksheets.html")!)
             }
             .font(.subheadline.weight(.semibold))
+            .tint(DBTTheme.accent)
+            Text("Use these only when they match the moment. The app works best as a repeatable daily system, not as a place to browse.")
+                .font(.footnote)
+                .foregroundStyle(DBTTheme.muted)
         }
         .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
     private func latestCheckIn(_ entry: PracticeEntry) -> some View {
@@ -162,17 +295,11 @@ private struct TodayView: View {
             }
         }
         .font(.subheadline)
+        .foregroundStyle(DBTTheme.text)
         .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
-}
-
-private var appBackground: Color {
-#if os(iOS)
-    Color(.systemGroupedBackground)
-#else
-    Color(nsColor: .windowBackgroundColor)
-#endif
 }
 
 private struct DiaryView: View {
@@ -328,4 +455,12 @@ private struct SupportView: View {
 #Preview {
     ContentView()
         .modelContainer(for: PracticeEntry.self, inMemory: true)
+}
+
+private var appBackground: Color {
+#if os(iOS)
+    Color(.systemGroupedBackground)
+#else
+    Color(nsColor: .windowBackgroundColor)
+#endif
 }
