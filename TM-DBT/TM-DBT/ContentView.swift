@@ -33,7 +33,7 @@ struct ContentView: View {
         .background(DBTTheme.surface)
         .onAppear {
             guard !todayReady else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 todayReady = true
             }
         }
@@ -94,9 +94,7 @@ private struct TodayLoadingView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding()
-        .task {
-            onReady()
-        }
+        .task { onReady() }
     }
 }
 
