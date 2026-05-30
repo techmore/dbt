@@ -1,10 +1,5 @@
 import AppKit
 import SwiftUI
-import Combine
-
-final class AppShellState: ObservableObject {
-    @Published var selectedTab: AppTab = .today
-}
 
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
@@ -45,7 +40,7 @@ final class DBTWindowController: NSWindowController {
 }
 
 struct ShellRootView: View {
-    @StateObject private var state = AppShellState()
+    @State private var selectedTab: AppTab = .today
     @State private var todayReady = false
 
     var body: some View {
@@ -55,12 +50,6 @@ struct ShellRootView: View {
             tabBar
         }
         .background(DBTTheme.surface)
-        .onAppear {
-            guard !todayReady else { return }
-            DispatchQueue.main.async {
-                todayReady = true
-            }
-        }
     }
 
     private var header: some View {
@@ -84,8 +73,8 @@ struct ShellRootView: View {
 
     @ViewBuilder
     private var content: some View {
-        Group {
-            switch state.selectedTab {
+            Group {
+            switch selectedTab {
             case .today:
                 if todayReady {
                     TodayView()
@@ -132,7 +121,10 @@ struct ShellRootView: View {
 
     private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
         Button {
-            state.selectedTab = tab
+            if tab == .today {
+                todayReady = true
+            }
+            selectedTab = tab
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: symbol)
@@ -142,11 +134,11 @@ struct ShellRootView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .foregroundStyle(state.selectedTab == tab ? DBTTheme.text : DBTTheme.muted)
-            .background(state.selectedTab == tab ? DBTTheme.accent.opacity(0.18) : Color.clear)
+            .foregroundStyle(selectedTab == tab ? DBTTheme.text : DBTTheme.muted)
+            .background(selectedTab == tab ? DBTTheme.accent.opacity(0.18) : Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(state.selectedTab == tab ? DBTTheme.accent : Color.clear, lineWidth: 1)
+                    .stroke(selectedTab == tab ? DBTTheme.accent : Color.clear, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
