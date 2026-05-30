@@ -5,52 +5,66 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .today
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            DeferredTab(isActive: selectedTab == .today) {
-                TodayView()
+        VStack(spacing: 0) {
+            Group {
+                switch selectedTab {
+                case .today:
+                    TodayView()
+                case .diary:
+                    DiaryView()
+                case .worksheets:
+                    WorksheetsView()
+                case .resources:
+                    ResourcesView()
+                }
             }
-            .tag(AppTab.today)
-                .tabItem { Label("Today", systemImage: "sun.max.fill") }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            DeferredTab(isActive: selectedTab == .diary) {
-                DiaryView()
-            }
-            .tag(AppTab.diary)
-                .tabItem { Label("Diary", systemImage: "list.clipboard") }
-
-            DeferredTab(isActive: selectedTab == .worksheets) {
-                WorksheetsView()
-            }
-            .tag(AppTab.worksheets)
-                .tabItem { Label("Worksheets", systemImage: "doc.richtext") }
-
-            DeferredTab(isActive: selectedTab == .resources) {
-                ResourcesView()
-            }
-            .tag(AppTab.resources)
-                .tabItem { Label("Resources", systemImage: "play.rectangle.stack") }
+            tabBar
         }
-        .tint(DBTTheme.accent)
+        .background(DBTTheme.surface)
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 10) {
+            tabButton(.today, title: "Today", symbol: "sun.max.fill")
+            tabButton(.diary, title: "Diary", symbol: "list.clipboard")
+            tabButton(.worksheets, title: "Worksheets", symbol: "doc.richtext")
+            tabButton(.resources, title: "Resources", symbol: "play.rectangle.stack")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(DBTTheme.surface2)
+        .overlay(Rectangle().frame(height: 1).foregroundStyle(DBTTheme.border), alignment: .top)
+    }
+
+    private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.subheadline.weight(.semibold))
+                Text(title)
+                    .font(.caption.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .foregroundStyle(selectedTab == tab ? DBTTheme.text : DBTTheme.muted)
+            .background(selectedTab == tab ? DBTTheme.accent.opacity(0.18) : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(selectedTab == tab ? DBTTheme.accent : Color.clear, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
 
 private enum AppTab {
     case today, diary, worksheets, resources
-}
-
-private struct DeferredTab<Content: View>: View {
-    let isActive: Bool
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        Group {
-            if isActive {
-                content()
-            } else {
-                Color.clear
-            }
-        }
-    }
 }
 
 private enum DBTTheme {
