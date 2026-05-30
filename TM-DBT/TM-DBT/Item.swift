@@ -47,6 +47,12 @@ final class PracticeStore {
         read([PracticeEntry].self, from: entriesURL)
     }
 
+    func loadEntriesAsync(completion: @escaping ([PracticeEntry]) -> Void) {
+        queue.async {
+            completion(self.read([PracticeEntry].self, from: self.entriesURL))
+        }
+    }
+
     func saveEntry(_ entry: PracticeEntry) {
         var entries = loadEntries()
         entries.append(entry)
@@ -59,6 +65,12 @@ final class PracticeStore {
 
     func loadReviews() -> [ChainReview] {
         read([ChainReview].self, from: reviewsURL)
+    }
+
+    func loadReviewsAsync(completion: @escaping ([ChainReview]) -> Void) {
+        queue.async {
+            completion(self.read([ChainReview].self, from: self.reviewsURL))
+        }
     }
 
     func saveReview(_ review: ChainReview) {

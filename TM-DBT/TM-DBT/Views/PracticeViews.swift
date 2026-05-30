@@ -107,7 +107,7 @@ struct DiaryView: View {
                 Button("Save check-in") {
                     let entry = PracticeEntry(emotion: emotion, trigger: trigger, response: response, notes: notes)
                     store.saveEntry(entry)
-                    entries = recentEntries()
+                    loadRecentEntries()
                     notes = ""
                 }
 
@@ -139,9 +139,7 @@ struct DiaryView: View {
                 .padding(.top, 8)
         }
         .onAppear {
-            if entries.isEmpty {
-                entries = recentEntries()
-            }
+            loadRecentEntries()
         }
     }
 
@@ -177,10 +175,15 @@ struct DiaryView: View {
         }
     }
 
-    private func recentEntries() -> [PracticeEntry] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
-        return store.loadEntries()
-            .filter { $0.date >= cutoff }
-            .sorted { $0.date > $1.date }
+    private func loadRecentEntries() {
+        store.loadEntriesAsync { loaded in
+            let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
+            let recent = loaded
+                .filter { $0.date >= cutoff }
+                .sorted { $0.date > $1.date }
+            DispatchQueue.main.async {
+                entries = recent
+            }
+        }
     }
 }
