@@ -36,7 +36,6 @@ private enum DBTTheme {
 private struct TodayView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PracticeEntry.date, order: .reverse) private var entries: [PracticeEntry]
-    @Query(sort: \ChainReview.date, order: .reverse) private var chainReviews: [ChainReview]
     @State private var showChainReview = false
 
     private let calendar = Calendar.current
@@ -81,14 +80,6 @@ private struct TodayView: View {
             calendar.isDate(entry.date, equalTo: weekStart, toGranularity: .weekOfYear)
                 && [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true)
         }.count
-    }
-
-    private var weekBlockCount: Int {
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        return entries
-            .filter { calendar.isDate($0.date, equalTo: weekStart, toGranularity: .weekOfYear) }
-            .map { [$0.morningDone, $0.middayDone, $0.eveningDone, $0.sleepDone].filter { $0 }.count }
-            .reduce(0, +)
     }
 
     private var currentStreak: Int {
@@ -160,6 +151,7 @@ private struct TodayView: View {
 
     private let morningSteps = [
         "Body check: notice what your body is doing right now",
+        "10 to 20 minutes of mindfulness or meditation",
         "Choose one focus word: calm, steady, clear, patient, or firm",
         "3 minutes of paced breathing",
         "Write the one next action after the shower"
@@ -167,39 +159,33 @@ private struct TodayView: View {
 
     private let middaySteps = [
         "Use STOP if stress is building",
+        "STOP = Stop, Take a step back, Observe, Proceed mindfully",
         "Choose one self-soothing action",
-        "If needed, pause and reality-check the situation"
+        "Eat, drink water, stretch, or step outside for 2 to 5 minutes"
     ]
 
     private let eveningSteps = [
+        "Target 8 hours of sleep",
+        "Begin wind-down 30 to 45 minutes before bed",
+        "No phone scrolling, new stimulus, or problem-solving during wind-down",
+        "Use 5 to 10 minutes for mindfulness, meditation, or slow breathing",
         "Fill out the diary card",
-        "Use the selector sheet only if you cannot name what you feel",
-        "Start wind-down 30 to 45 minutes before bed",
-        "No phone scrolling during wind-down"
+        "Use the selector sheet only if you cannot name what you feel"
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                LazyVStack(alignment: .leading, spacing: 12) {
                     header
                     howToUseCard
                     weekStatusCard
                     nextActionCard
-                    summaryCard
-                    sleepCard
-                    checklistCard
-                    routineCard(title: "Morning", subtitle: "7 to 12 minutes", steps: morningSteps, symbol: "sunrise.fill")
-                    routineCard(title: "Midday", subtitle: "8 to 12 minutes", steps: middaySteps, symbol: "figure.walk")
-                    routineCard(title: "Evening", subtitle: "8 to 15 minutes", steps: eveningSteps, symbol: "moon.stars.fill")
+                    scaffoldCard(title: "Morning", subtitle: "Mindfulness / meditation, 10 to 20 minutes", steps: morningSteps, symbol: "sunrise.fill")
+                    scaffoldCard(title: "Midday", subtitle: "Reset, 2 to 5 minutes", steps: middaySteps, symbol: "figure.walk")
+                    scaffoldCard(title: "Nighttime", subtitle: "Wind-down starts 30 to 45 minutes before bed", steps: eveningSteps, symbol: "moon.stars.fill")
                     chainActionCard
                     quickActions
-                    if let entry = todayEntry ?? entries.first {
-                        latestCheckIn(entry)
-                    }
-                    if let review = chainReviews.first {
-                        latestChainReview(review)
-                    }
                 }
                 .padding()
             }
@@ -236,7 +222,7 @@ private struct TodayView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("How to use this today")
                 .font(.headline)
-            Text("Do the next action first, then use the other blocks only if you have time.")
+            Text("Start with the next action. Use the morning, midday, and nighttime blocks as your daily scaffold.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
         }
@@ -311,19 +297,6 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
-    private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                statCard("Today", value: "\(completedBlocksToday)/4")
-                statCard("Week", value: "\(weekBlockCount)")
-                statCard("Streak", value: "\(currentStreak)")
-            }
-            Text("Week days with any block: \(weekSessionCount). Good progress means repeatable practice, not perfect days.")
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
-        }
-    }
-
     private var dayLabel: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
@@ -359,54 +332,6 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
-    private var sleepCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Sleep reset", systemImage: "bed.double.fill")
-                    .font(.headline)
-                Spacer()
-                Text("8.5 hours")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(DBTTheme.muted)
-            }
-            Text("Bedtime goal: 9:30 pm. Wind-down begins around 8:45 to 9:00 pm. The goal is to lower stimulation, not to get more work done.")
-                .font(.subheadline)
-                .foregroundStyle(DBTTheme.text)
-            VStack(alignment: .leading, spacing: 8) {
-                sleepLine("Finish the last meaningful task")
-                sleepLine("Stop phone scrolling")
-                sleepLine("Lower lights and room stimulation")
-                sleepLine("Get into bed on time")
-            }
-        }
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private func sleepLine(_ text: String) -> some View {
-        Label(text, systemImage: "checkmark.circle")
-            .font(.subheadline)
-            .foregroundStyle(DBTTheme.text)
-    }
-
-    private var checklistCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Today checklist", systemImage: "checklist")
-                .font(.headline)
-            Toggle("Morning block done", isOn: binding(\PracticeEntry.morningDone))
-            Toggle("Midday block done", isOn: binding(\PracticeEntry.middayDone))
-            Toggle("Evening block done", isOn: binding(\PracticeEntry.eveningDone))
-            Toggle("Sleep reset done", isOn: binding(\PracticeEntry.sleepDone))
-            Text("Success looks like doing the smallest useful block on purpose, then marking it. A good week is five days with at least one completed block.")
-                .font(.footnote)
-                .foregroundStyle(DBTTheme.muted)
-        }
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
     private func binding(_ keyPath: ReferenceWritableKeyPath<PracticeEntry, Bool>) -> Binding<Bool> {
         Binding(
             get: { currentEntry[keyPath: keyPath] },
@@ -426,7 +351,7 @@ private struct TodayView: View {
         return entry
     }
 
-    private func routineCard(title: String, subtitle: String, steps: [String], symbol: String) -> some View {
+    private func scaffoldCard(title: String, subtitle: String, steps: [String], symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label(title, systemImage: symbol)
@@ -471,37 +396,6 @@ private struct TodayView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
     }
 
-    private func latestCheckIn(_ entry: PracticeEntry) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Latest check-in", systemImage: "square.and.pencil")
-                .font(.headline)
-            Text("Emotion: \(entry.emotion)")
-            Text("Trigger: \(entry.trigger)")
-            Text("Response: \(entry.response)")
-            if !entry.notes.isEmpty {
-                Text("Notes: \(entry.notes)")
-            }
-        }
-        .font(.subheadline)
-        .foregroundStyle(DBTTheme.text)
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
-
-    private func latestChainReview(_ review: ChainReview) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Latest hard moment review", systemImage: "arrow.triangle.branch")
-                .font(.headline)
-            Text("Prompting event: \(review.promptingEvent.isEmpty ? "Not filled in" : review.promptingEvent)")
-            Text("Next time: \(review.nextTime.isEmpty ? "Not filled in" : review.nextTime)")
-        }
-        .font(.subheadline)
-        .foregroundStyle(DBTTheme.text)
-        .padding()
-        .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
-    }
 }
 
 private struct ChainReviewView: View {
