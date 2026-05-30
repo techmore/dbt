@@ -41,6 +41,7 @@ final class DBTWindowController: NSWindowController {
 
 struct ShellRootView: View {
     @State private var selectedTab: AppTab?
+    @State private var readyTab: AppTab?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,13 +78,29 @@ struct ShellRootView: View {
             case nil:
                 launchPlaceholder
             case .today:
-                TodayView()
+                if readyTab == .today {
+                    TodayView()
+                } else {
+                    loadingPlaceholder("Today")
+                }
             case .diary:
-                DiaryView()
+                if readyTab == .diary {
+                    DiaryView()
+                } else {
+                    loadingPlaceholder("Diary")
+                }
             case .worksheets:
-                WorksheetsView()
+                if readyTab == .worksheets {
+                    WorksheetsView()
+                } else {
+                    loadingPlaceholder("Worksheets")
+                }
             case .resources:
-                ResourcesView()
+                if readyTab == .resources {
+                    ResourcesView()
+                } else {
+                    loadingPlaceholder("Resources")
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -96,6 +113,20 @@ struct ShellRootView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(DBTTheme.muted)
             Text("Select a tab to open the scaffold.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
+    }
+
+    private func loadingPlaceholder(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Loading the scaffold.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
         }
@@ -119,6 +150,10 @@ struct ShellRootView: View {
     private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
         Button {
             selectedTab = tab
+            readyTab = nil
+            DispatchQueue.main.async {
+                readyTab = tab
+            }
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: symbol)
