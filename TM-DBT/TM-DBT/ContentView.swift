@@ -33,7 +33,7 @@ struct ContentView: View {
         .background(DBTTheme.surface)
         .onAppear {
             guard !todayReady else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            DispatchQueue.main.async {
                 todayReady = true
             }
         }
