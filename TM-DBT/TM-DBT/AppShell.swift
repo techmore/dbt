@@ -66,7 +66,6 @@ final class DBTRootViewController: NSViewController {
     private var currentHost: NSViewController?
     private var hostCache: [AppTab: NSViewController] = [:]
     private var selectedTab: AppTab = .today
-    private var didScheduleHostPrewarm = false
     private let loadingLabel = NSTextField(labelWithString: "Ready")
     private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
 
@@ -82,13 +81,6 @@ final class DBTRootViewController: NSViewController {
         configureHeader()
         configureContentContainer()
         showPlaceholder()
-        activate(tab: .today)
-    }
-
-    override func viewDidAppear() {
-        super.viewDidAppear()
-        StartupTrace.write("root_view_did_appear")
-        scheduleHostPrewarmIfNeeded()
     }
 
     private func configureHeader() {
@@ -160,22 +152,7 @@ final class DBTRootViewController: NSViewController {
     }
 
     private func showPlaceholder() {
-        loadingLabel.stringValue = "Ready"
-    }
-
-    private func scheduleHostPrewarmIfNeeded() {
-        guard !didScheduleHostPrewarm else { return }
-        didScheduleHostPrewarm = true
-
-        for tab in [AppTab.diary, .worksheets, .resources] {
-            if self.hostCache[tab] == nil {
-                let start = CACurrentMediaTime()
-                _ = self.buildHost(for: tab)
-                let duration = Int((CACurrentMediaTime() - start) * 1000)
-                StartupTrace.write("tab_host_prewarm tab=\(self.tabName(tab)) duration_ms=\(duration)")
-                self.logger.info("tab_host_prewarm tab=\(self.tabName(tab), privacy: .public) duration_ms=\(duration, privacy: .public)")
-            }
-        }
+        loadingLabel.stringValue = "Select a tab"
     }
 
     private func activate(tab: AppTab) {
