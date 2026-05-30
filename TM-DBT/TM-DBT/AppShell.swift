@@ -1,27 +1,5 @@
 import AppKit
 import SwiftUI
-import os.log
-
-enum StartupTrace {
-    static let fileURL = URL(fileURLWithPath: "/tmp/TM-DBT-startup.log")
-
-    static func write(_ line: String) {
-        do {
-            let data = "\(line)\n".data(using: .utf8) ?? Data()
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                let handle = try FileHandle(forWritingTo: fileURL)
-                try handle.seekToEnd()
-                try handle.write(contentsOf: data)
-                try handle.close()
-            } else {
-                try data.write(to: fileURL, options: [.atomic])
-            }
-        } catch {
-            print("startup_trace_write_failed \(error)")
-        }
-    }
-}
-
 @main
 final class TM_DBTAppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: DBTWindowController?
@@ -67,7 +45,6 @@ final class DBTRootViewController: NSViewController {
     private var hostCache: [AppTab: NSViewController] = [:]
     private var selectedTab: AppTab = .today
     private let loadingLabel = NSTextField(labelWithString: "Ready")
-    private let logger = Logger(subsystem: "com.techmore.org.TM-DBT", category: "startup")
 
     override func loadView() {
         view = NSView()
@@ -77,7 +54,6 @@ final class DBTRootViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        StartupTrace.write("root_view_did_load")
         configureHeader()
         configureContentContainer()
         showPlaceholder()
@@ -170,37 +146,22 @@ final class DBTRootViewController: NSViewController {
         case 2: newTab = .worksheets
         default: newTab = .resources
         }
-        self.logger.info("tab_selected tab=\(self.tabName(newTab), privacy: .public)")
         updateContent(for: newTab)
     }
 
     private func updateContent(for tab: AppTab) {
         guard tab != selectedTab || currentHost == nil else { return }
         selectedTab = tab
-        let start = CACurrentMediaTime()
-        self.logger.info("tab_content_update_start tab=\(self.tabName(tab), privacy: .public)")
-
-        loadingLabel.stringValue = "Loading..."
-
         if let cachedHost = hostCache[tab] {
             ensureAttached(cachedHost)
             hideAllHosts(except: cachedHost)
-            loadingLabel.stringValue = "Ready"
             currentHost = cachedHost
             return
         }
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            let host = self.hostCache[tab] ?? self.buildHost(for: tab)
-            self.ensureAttached(host)
-            self.hideAllHosts(except: host)
-            self.loadingLabel.stringValue = "Ready"
-            self.currentHost = host
-            let duration = Int((CACurrentMediaTime() - start) * 1000)
-            StartupTrace.write("tab_host_built tab=\(self.tabName(tab)) duration_ms=\(duration)")
-            self.logger.info("tab_host_built tab=\(self.tabName(tab), privacy: .public) duration_ms=\(duration, privacy: .public)")
-        }
+        let host = buildHost(for: tab)
+        ensureAttached(host)
+        hideAllHosts(except: host)
+        currentHost = host
     }
 
     private func buildHost(for tab: AppTab) -> NSViewController {
@@ -237,15 +198,6 @@ final class DBTRootViewController: NSViewController {
     private func hideAllHosts(except visibleHost: NSViewController) {
         for host in hostCache.values {
             host.view.isHidden = host !== visibleHost
-        }
-    }
-
-    private func tabName(_ tab: AppTab) -> String {
-        switch tab {
-        case .today: return "today"
-        case .diary: return "diary"
-        case .worksheets: return "worksheets"
-        case .resources: return "resources"
         }
     }
 }
