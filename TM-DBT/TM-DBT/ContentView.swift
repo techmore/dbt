@@ -41,15 +41,13 @@ private enum AppTab {
 private struct DeferredTab<Content: View>: View {
     let isActive: Bool
     @ViewBuilder var content: () -> Content
-    @State private var hasLoaded = false
 
     var body: some View {
         Group {
-            if isActive || hasLoaded {
+            if isActive {
                 content()
             } else {
                 Color.clear
-                    .task { hasLoaded = true }
             }
         }
     }
@@ -71,7 +69,6 @@ private struct TodayView: View {
     @State private var showChainReview = false
 
     private let calendar = Calendar.current
-    private let historyWindowDays = 30
 
     init() {
         let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .distantPast
@@ -104,60 +101,20 @@ private struct TodayView: View {
         }
     }
 
-    private var todayEntry: PracticeEntry? {
-        entries.first(where: { calendar.isDateInToday($0.date) })
-    }
-
     private var completedBlocksToday: Int {
-        guard let currentEntry = todayEntry else { return 0 }
-        return [currentEntry.morningDone, currentEntry.middayDone, currentEntry.eveningDone, currentEntry.sleepDone].filter { $0 }.count
+        metrics.todayBlocks
     }
 
     private var weekSessionCount: Int {
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        var count = 0
-        for entry in entries {
-            if entry.date < weekStart {
-                break
-            }
-            if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
-                count += 1
-            }
-        }
-        return count
+        metrics.weekSessionCount
     }
 
     private var currentStreak: Int {
-        var streak = 0
-        var expectedDay = calendar.startOfDay(for: Date())
-        var index = 0
+        metrics.currentStreak
+    }
 
-        while index < entries.count {
-            let entry = entries[index]
-            let entryDay = calendar.startOfDay(for: entry.date)
-
-            if entryDay > expectedDay {
-                index += 1
-                continue
-            }
-
-            if entryDay < expectedDay {
-                break
-            }
-
-            if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
-                streak += 1
-                guard let previous = calendar.date(byAdding: .day, value: -1, to: expectedDay) else { break }
-                expectedDay = previous
-            } else {
-                break
-            }
-
-            while index < entries.count, calendar.isDate(entries[index].date, inSameDayAs: entryDay) {
-                index += 1
-            }
-        }
-        return streak
+    private var currentEntry: PracticeEntry? {
+        metrics.todayEntry
     }
 
     private var weekPhase: WeekPhase {
@@ -274,6 +231,10 @@ private struct TodayView: View {
         case .windDown:
             return hourlyScaffold[5]
         }
+    }
+
+    private var metrics: SummaryMetrics {
+        SummaryMetrics(entries: entries, calendar: calendar)
     }
 
     private var nextBlock: (title: String, subtitle: String, steps: [String], symbol: String) {
@@ -531,7 +492,7 @@ private struct TodayView: View {
 
     private func binding(_ keyPath: ReferenceWritableKeyPath<PracticeEntry, Bool>) -> Binding<Bool> {
         Binding(
-            get: { todayEntry?[keyPath: keyPath] ?? false },
+            get: { currentEntry?[keyPath: keyPath] ?? false },
             set: { newValue in
                 let entry = ensureTodayEntry()
                 entry[keyPath: keyPath] = newValue
@@ -540,8 +501,8 @@ private struct TodayView: View {
     }
 
     private func ensureTodayEntry() -> PracticeEntry {
-        if let todayEntry {
-            return todayEntry
+        if let currentEntry {
+            return currentEntry
         }
         let entry = PracticeEntry(date: Date())
         modelContext.insert(entry)
@@ -569,6 +530,72 @@ private struct TodayView: View {
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private struct SummaryMetrics {
+        let todayEntry: PracticeEntry?
+        let todayBlocks: Int
+        let weekSessionCount: Int
+        let currentStreak: Int
+
+        init(entries: [PracticeEntry], calendar: Calendar) {
+            let now = Date()
+            let today = calendar.startOfDay(for: now)
+            let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? .distantPast
+
+            var foundToday: PracticeEntry?
+            var weekCount = 0
+
+            for entry in entries {
+                if entry.date >= weekStart,
+                   [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
+                    weekCount += 1
+                }
+
+                if foundToday == nil, calendar.isDateInToday(entry.date) {
+                    foundToday = entry
+                }
+            }
+
+            let todayBlocks = foundToday.map {
+                [$0.morningDone, $0.middayDone, $0.eveningDone, $0.sleepDone].filter { $0 }.count
+            } ?? 0
+
+            var streak = 0
+            var expectedDay = today
+            var index = 0
+
+            while index < entries.count {
+                let entry = entries[index]
+                let entryDay = calendar.startOfDay(for: entry.date)
+
+                if entryDay > expectedDay {
+                    index += 1
+                    continue
+                }
+
+                if entryDay < expectedDay {
+                    break
+                }
+
+                if [entry.morningDone, entry.middayDone, entry.eveningDone, entry.sleepDone].contains(true) {
+                    streak += 1
+                    guard let previous = calendar.date(byAdding: .day, value: -1, to: expectedDay) else { break }
+                    expectedDay = previous
+                } else {
+                    break
+                }
+
+                while index < entries.count, calendar.isDate(entries[index].date, inSameDayAs: entryDay) {
+                    index += 1
+                }
+            }
+
+            self.todayEntry = foundToday
+            self.todayBlocks = todayBlocks
+            self.weekSessionCount = weekCount
+            self.currentStreak = streak
+        }
     }
 
 }
