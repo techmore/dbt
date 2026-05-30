@@ -2,21 +2,56 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @State private var selectedTab: AppTab = .today
+
     var body: some View {
-        TabView {
-            TodayView()
+        TabView(selection: $selectedTab) {
+            DeferredTab(isActive: selectedTab == .today) {
+                TodayView()
+            }
+            .tag(AppTab.today)
                 .tabItem { Label("Today", systemImage: "sun.max.fill") }
 
-            DiaryView()
+            DeferredTab(isActive: selectedTab == .diary) {
+                DiaryView()
+            }
+            .tag(AppTab.diary)
                 .tabItem { Label("Diary", systemImage: "list.clipboard") }
 
-            WorksheetsView()
+            DeferredTab(isActive: selectedTab == .worksheets) {
+                WorksheetsView()
+            }
+            .tag(AppTab.worksheets)
                 .tabItem { Label("Worksheets", systemImage: "doc.richtext") }
 
-            ResourcesView()
+            DeferredTab(isActive: selectedTab == .resources) {
+                ResourcesView()
+            }
+            .tag(AppTab.resources)
                 .tabItem { Label("Resources", systemImage: "play.rectangle.stack") }
         }
         .tint(DBTTheme.accent)
+    }
+}
+
+private enum AppTab {
+    case today, diary, worksheets, resources
+}
+
+private struct DeferredTab<Content: View>: View {
+    let isActive: Bool
+    @ViewBuilder var content: () -> Content
+    @State private var hasLoaded = false
+
+    var body: some View {
+        Group {
+            if isActive || hasLoaded {
+                content()
+            } else {
+                Color.clear
+                    .task { hasLoaded = true }
+            }
+        }
     }
 }
 
