@@ -44,7 +44,6 @@ final class DBTRootViewController: NSViewController {
     private let contentContainer = NSView()
     private var currentHost: NSViewController?
     private var selectedTab: AppTab = .today
-    private var cachedHosts: [AppTab: NSHostingController<AnyView>] = [:]
 
     override func loadView() {
         view = NSView()
@@ -60,7 +59,6 @@ final class DBTRootViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        prewarmTabs()
     }
 
     private func configureHeader() {
@@ -69,9 +67,9 @@ final class DBTRootViewController: NSViewController {
         segmentedControl.target = self
         segmentedControl.action = #selector(tabChanged(_:))
 
-        let bar = NSVisualEffectView()
-        bar.material = .hudWindow
-        bar.state = .active
+        let bar = NSView()
+        bar.wantsLayer = true
+        bar.layer?.backgroundColor = NSColor(DBTTheme.surface2).cgColor
         bar.translatesAutoresizingMaskIntoConstraints = false
 
         let title = NSTextField(labelWithString: "TM-DBT")
@@ -140,8 +138,7 @@ final class DBTRootViewController: NSViewController {
         currentHost?.view.removeFromSuperview()
         currentHost?.removeFromParent()
 
-        let host = cachedHosts[tab] ?? NSHostingController(rootView: rootView(for: tab))
-        cachedHosts[tab] = host
+        let host = NSHostingController(rootView: rootView(for: tab))
         addChild(host)
         host.view.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(host.view)
@@ -154,16 +151,6 @@ final class DBTRootViewController: NSViewController {
         ])
 
         currentHost = host
-    }
-
-    private func prewarmTabs() {
-        let tabs: [AppTab] = [.today, .diary, .worksheets, .resources]
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            for tab in tabs where self.cachedHosts[tab] == nil {
-                self.cachedHosts[tab] = NSHostingController(rootView: self.rootView(for: tab))
-            }
-        }
     }
 
     private func rootView(for tab: AppTab) -> AnyView {
