@@ -17,7 +17,7 @@ struct ContentView: View {
                 .tabItem { Label("Resources", systemImage: "play.rectangle.stack") }
 
             SupportView()
-                .tabItem { Label("Support", systemImage: "phone.fill") }
+                .tabItem { Label("Support", systemImage: "lifepreserver") }
         }
         .tint(DBTTheme.accent)
     }
@@ -136,30 +136,71 @@ private struct TodayView: View {
         }
     }
 
-    private let morningSteps = [
-        "Body check: notice what your body is doing right now",
-        "10 to 20 minutes of mindfulness or meditation",
-        "Choose one focus word: calm, steady, clear, patient, or firm",
-        "3 minutes of paced breathing",
-        "Write the one next action after the shower"
-    ]
-
-    private let middaySteps = [
-        "Use STOP if stress is building",
-        "STOP = Stop, Take a step back, Observe, Proceed mindfully",
-        "Choose one self-soothing action",
-        "Eat, drink water, stretch, or step outside for 2 to 5 minutes"
-    ]
-
-    private let eveningSteps = [
-        "If bedtime is 9:30 pm, start wind-down around 8:45 to 9:00 pm",
-        "Target 8 hours of sleep",
-        "Begin wind-down 30 to 45 minutes before bed",
-        "No phone scrolling, new stimulus, or problem-solving during wind-down",
-        "Use 5 to 10 minutes for mindfulness, meditation, or slow breathing",
-        "Fill out the diary card",
-        "Use the selector sheet only if you cannot name what you feel",
-        "Night is complete when the diary card is done, the phone is down, and lights-out begins"
+    private let hourlyScaffold: [(title: String, subtitle: String, steps: [String], symbol: String)] = [
+        (
+            title: "Wake",
+            subtitle: "First 15 minutes",
+            steps: [
+                "Body check: notice what your body is doing right now",
+                "Drink water and get light exposure",
+                "10 to 20 minutes of mindfulness or meditation",
+                "Choose one focus word: calm, steady, clear, patient, or firm"
+            ],
+            symbol: "sunrise.fill"
+        ),
+        (
+            title: "2 hours after waking",
+            subtitle: "First work block",
+            steps: [
+                "Set one target for the next 2-hour block",
+                "Use paced breathing for 2 to 3 minutes if stress is building",
+                "Write the one next action after the shower or first break"
+            ],
+            symbol: "clock.fill"
+        ),
+        (
+            title: "4 hours after waking",
+            subtitle: "Reset block",
+            steps: [
+                "Use STOP if you are activated",
+                "STOP = Stop, Take a step back, Observe, Proceed mindfully",
+                "Choose one self-soothing action",
+                "Eat, drink water, stretch, or step outside for 2 to 5 minutes"
+            ],
+            symbol: "arrow.clockwise.circle.fill"
+        ),
+        (
+            title: "6 hours after waking",
+            subtitle: "Midday review",
+            steps: [
+                "Check the diary card or selector sheet",
+                "Notice one hard moment and one skill used",
+                "If needed, do a brief chain analysis now instead of later"
+            ],
+            symbol: "list.bullet.rectangle.portrait"
+        ),
+        (
+            title: "8 hours before bed",
+            subtitle: "Close the day",
+            steps: [
+                "Finish the last meaningful task",
+                "Set tomorrow’s one-skill focus",
+                "Do 5 to 10 minutes of mindfulness, meditation, or slow breathing"
+            ],
+            symbol: "moon.stars.fill"
+        ),
+        (
+            title: "30 to 45 minutes before bed",
+            subtitle: "Wind-down",
+            steps: [
+                "Target 8 hours of sleep",
+                "Lower stimulation and stop problem-solving",
+                "Fill out the diary card",
+                "Use the selector sheet only if you cannot name what you feel",
+                "Night is complete when the diary card is done and lights-out begins"
+            ],
+            symbol: "bed.double.fill"
+        )
     ]
 
     var body: some View {
@@ -169,9 +210,7 @@ private struct TodayView: View {
                     header
                     howToUseCard
                     weekStatusCard
-                    scaffoldCard(title: "Morning", subtitle: "Mindfulness / meditation, 10 to 20 minutes", steps: morningSteps, symbol: "sunrise.fill")
-                    scaffoldCard(title: "Midday", subtitle: "Reset, 2 to 5 minutes", steps: middaySteps, symbol: "figure.walk")
-                    scaffoldCard(title: "Nighttime", subtitle: "Wind-down starts 30 to 45 minutes before bed", steps: eveningSteps, symbol: "moon.stars.fill")
+                    hourlyScaffoldSection
                     chainActionCard
                 }
                 .padding()
@@ -212,7 +251,8 @@ private struct TodayView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("First move")
                 .font(.headline)
-            Text("Start with the next action. Use the morning, midday, and nighttime blocks as your daily scaffold.")
+            Text("Start with the next action. Use the hour groups as your daily scaffold.")
+            Text("If you feel lost, follow the hour groups in order: wake, 2 hours, 4 hours, 6 hours, evening.")
                 .font(.subheadline)
                 .foregroundStyle(DBTTheme.text)
         }
@@ -248,6 +288,21 @@ private struct TodayView: View {
         .padding()
         .background(DBTTheme.surface2, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(DBTTheme.border, lineWidth: 1))
+    }
+
+    private var hourlyScaffoldSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Hourly scaffold")
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(DBTTheme.muted)
+            Text("Use the next time block if you feel lost.")
+                .font(.subheadline)
+                .foregroundStyle(DBTTheme.text)
+            ForEach(Array(hourlyScaffold.enumerated()), id: \.offset) { _, block in
+                scaffoldCard(title: block.title, subtitle: block.subtitle, steps: block.steps, symbol: block.symbol)
+            }
+        }
     }
 
     private var chainActionCard: some View {
@@ -484,7 +539,7 @@ private struct WorksheetsView: View {
         NavigationStack {
             List {
                 Section("Use in order") {
-                    row("Daily Practice", detail: "Morning, midday, nighttime scaffold.")
+                    row("Daily Practice", detail: "Wake, 2-hour, 4-hour, 6-hour, evening scaffold.")
                     row("Diary Card", detail: "Brief daily check-in.")
                     row("Chain Analysis", detail: "After a hard event.")
                     row("Weekly Review", detail: "Measure and adjust.")
@@ -494,7 +549,7 @@ private struct WorksheetsView: View {
                 }
 
                 Section("Nightly endpoint") {
-                    Text("Night is complete when the diary card is done, the phone is down, and lights-out begins.")
+                    Text("Night is complete when the diary card is done and lights-out begins.")
                 }
 
                 Section("Printable source") {
