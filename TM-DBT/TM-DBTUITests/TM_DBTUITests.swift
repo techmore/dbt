@@ -22,15 +22,31 @@ final class TM_DBTUITests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
+    /// Guards against the blank-screen bug: content must be on screen and usable on every platform.
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testMainScreensAreReachable() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        XCTAssertTrue(app.buttons["Review a hard moment"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Now"].isHittable)
+
+        let morning = app.buttons["checkpoint-morning"]
+        let before = morning.value as? String
+        morning.tap()
+        XCTAssertNotEqual(morning.value as? String, before)
+        morning.tap()
+        XCTAssertEqual(morning.value as? String, before)
+
+        app.buttons["Diary"].tap()
+        XCTAssertTrue(app.buttons["Save check-in"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Save check-in"].isHittable)
+
+        app.buttons["Worksheets"].tap()
+        XCTAssertTrue(app.staticTexts["Nightly endpoint"].waitForExistence(timeout: 5))
+
+        app.buttons["Resources"].tap()
+        XCTAssertTrue(app.staticTexts["In a crisis"].waitForExistence(timeout: 5))
     }
 
     @MainActor
