@@ -42,6 +42,16 @@ final class TM_DBTUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Save check-in"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Save check-in"].isHittable)
 
+        app.buttons["Today"].tap()
+        app.buttons["Review a hard moment"].tap()
+        let prompting = app.textViews.firstMatch
+        XCTAssertTrue(prompting.waitForExistence(timeout: 5))
+        prompting.tap()
+        prompting.typeText("UI test event")
+        app.buttons["Save"].tap()
+        app.buttons["Diary"].tap()
+        XCTAssertTrue(app.staticTexts["UI test event"].waitForExistence(timeout: 5))
+
         app.buttons["Worksheets"].tap()
         XCTAssertTrue(app.staticTexts["Nightly endpoint"].waitForExistence(timeout: 5))
 

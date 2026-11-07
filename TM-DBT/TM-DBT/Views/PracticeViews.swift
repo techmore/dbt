@@ -232,6 +232,13 @@ struct ChainReviewView: View {
             }
         }
         .preferredColorScheme(.dark)
+        // Don't lose a half-written review to an accidental swipe; Cancel still closes it.
+        .interactiveDismissDisabled(hasText)
+    }
+
+    private var hasText: Bool {
+        [promptingEvent, vulnerabilityFactors, bodyThoughtsFeelings, behavior, consequence, nextTime]
+            .contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     private func field(_ title: String, text: Binding<String>, prompt: String) -> some View {
