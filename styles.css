@@ -730,3 +730,19 @@ details {
   border-left: 4px solid var(--amber);
   background: linear-gradient(180deg, rgba(176, 125, 42, 0.08), rgba(176, 125, 42, 0.02));
 }
+
+.site-footer {
+  padding: 0 var(--container-inline) 2rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.site-footer a {
+  color: var(--stone-700);
+}
+
+@media print {
+  .site-footer {
+    display: none;
+  }
+}
