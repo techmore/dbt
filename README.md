@@ -43,3 +43,5 @@ python3 -m http.server 4173
 ```
 
 Then visit `http://localhost:4173`. GitHub Pages serves the repo root from `main`.
+
+Part of [Techmore](https://techmore.github.io/pages/repos/).
